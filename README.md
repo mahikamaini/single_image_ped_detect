@@ -1,77 +1,88 @@
-# ESP-DL [[中文]](./README_cn.md)
+# TinkerTrap Notebook
+## Tuesday, May 13, 2025
+### Task
+Set up ESP-IDF code environment in VSCode on my Mac. 
+### Notes
+In order to test if the code runs, the ESP-IDF will need to be plugged into my laptop. This should arrive by the end of the week. 
+### What I Accomplished
+I followed a provided video tutorial to integrate the necessary software with the ESP-IDF VSCode extension. While it was meant for Windows, I was able to successfully integrate it with MacOS. I also cloned the GitHub repository for the ESP-IDF code, including the pedestrian-detect sample we will be using, and created a new repository, TinkerTrap, for our purposes. 
 
-[![Documentation Status](./docs/_static/doc_latest.svg)](https://docs.espressif.com/projects/esp-dl/en/latest/index.html)  [![Component Registry](https://components.espressif.com/components/espressif/esp-dl/badge.svg)](https://components.espressif.com/components/espressif/esp-dl)
+## Wednesday, May 14, 2025
+### Task
+Read through and understand the pedestrian_detect example code from the original GitHub repository.
+### Notes
+I commented all observations in the app_main.cpp file under the pedestrian_detect folder.
+### What I Accomplished
+I read through the example code and broke it down to understand its functionality. While I don't have a background in C++, I utilized the Espressif API and ChatGPT to break down some of the syntax in order to better understand the logical function. As a result, I'm a little more familiar with the code function, though not necessarily how to adapt it to our specific purpose quite yet. 
 
-ESP-DL is a lightweight and efficient neural network inference framework designed specifically for ESP series chips. With ESP-DL, you can easily and quickly develop AI applications using Espressif's System on Chips (SoCs).
+## Monday, May 19, 2025
+### Task
+Plug in and set up the ESP32-S3 device. 
+### Notes
+The device requires a USB-A to micro-USB cable, not a USB-A to USB-C cable. 
+### What I Accomplished
+I was able to install the necessary UART drivers on my laptop and obtain a USB-A to micro-USB cable. From there, I connected the ESP32 to my laptop and successfully flashed some of the example scripts to it. With Ben, we also discussed how to best adapt the existing pedestrian_detect code to apply to single images rather than a continuous video feed using ChatGPT as a guide. 
 
-## Overview
+## Wednesday, May 21, 2025
+### Task
+Do initial file structure setup for the project as given by ChatGPT.
+### Notes
+N/A
+### What I Accomplished
+I was able to set up the project with the relevant file structure and code given by ChatGPT. While trying to build the project, I ran into various bugs, mostly involving installing necessary CMake drivers and ESP version control. I am currently working with ChatGPT to resolve these errors.
 
-ESP-DL offers APIs to load, debug, and run AI models. The framework is easy to use and can be seamlessly integrated with other Espressif SDKs. ESP-PPQ serves as the quantization tool for ESP-DL, capable of quantizing models from ONNX, Pytorch, and TensorFlow, and exporting them into the ESP-DL standard model format.
+## Thursday, May 22, 2025
+### Task
+Debug CMake errors that were appearing when trying to build the project; continue to debug in order for successful compilation to occur. 
+### Notes
+The device target confirmation in the Terminal does not show up unless initial build is successful. 
+### What I Accomplished
+I realized the CMake error was due to my version (5.1.1) not matching the overall version (5.4.1), so resolving this version conflict resolved the initial issue. However, there was a similar issue with the ESP-IDF version, though this was resolved in a similar manner and making sure all dependencies and filepaths were present and correct. I also fixed an issue with the single_image_detect.cpp referencing the wrong name of the single_image_detect.hpp file. However, a fatal error persisted in which pedestrian_detect.hpp was being referenced as a header in single_image_detect.hpp but was never created during build. 
 
-- **ESP-DL Standard Model Format**: This format is similar to ONNX but uses FlatBuffers instead of Protobuf, making it more lightweight and supporting zero-copy deserialization, with a file extension of `.espdl`.
-- **Efficient Operator Implementation**: ESP-DL efficiently implements common AI operators such as Conv, Gemm, Add, and Mul. [**The list of supported operators**](./operator_support_state.md).
-- **Static Memory Planner**: The memory planner automatically allocates different layers to the optimal memory location based on the user-specified internal RAM size, ensuring efficient overall running speed while minimizing memory usage.
-- **Dual Core Scheduling**: Automatic dual-core scheduling allows computationally intensive operators to fully utilize the dual-core computing power. Currently, Conv2D and DepthwiseConv2D support dual-core scheduling.
-- **8bit LUT Activation**: All activation functions except for ReLU and PReLU are implemented using an 8-bit LUT (Look Up Table) method in ESP-DL to accelerate inference. You can use any activation function, and their computational complexity remains the same.
+## Friday, May 23, 2025
+### Task
+Find the cause as to why relevant files such as pedestrian_detect.hpp were not being pulled from the GitHub repo during build. 
+### Notes
+N/A
+### What I Accomplished
+I attempted lengthy debugging for this issue, mainly modifying CMakeLists.txt and idf.yml files. I managed to add an esp-dl folder into the project, which contained pedestrian_detect.hpp and other files listed as headers in the main project files. However, I realized the file paths listed were incorrect and that I needed to update those to reflect the current project file structure, as certain files were not being referenced and causing errors. 
 
-## News
-- [2025/04/30] We released a new [esp-detection](https://github.com/espressif/esp-detection)​​ project and the `​​ESPDet-Pico`​​ model, which can easily train and deploy object detection models. [espdet_pico_224_224_cat​​ espdl model](./models/cat_detect/) and [example](./examples/cat_detect/) is a cat detection model trained by ​esp-detection​​. Feel free to try it and share your feedback!   
-- [2025/02/18] We supported yolo11n [espdl model](https://github.com/espressif/esp-dl/tree/master/models/coco_detect) and [example](https://github.com/espressif/esp-dl/tree/master/examples/yolo11_detect).
-- [2025/01/09] We updated the schema of espdl model and released ESP-DL v3.1.0. Note: previous models can be load by new schema, but new model is not compatible with previous version. 
-- [2024/12/20] We released ESP-DL v3.0.0.
+## Monday, May 26, 2025
+### Task
+Fix file path and CMakeLists files to ensure the correct files were being used in file headers. 
+### Notes
+N/A
+### What I Accomplished
+I modified the CMakeLists file in the main folder to reference directories that included files mentioned in the detect_single_image.cpp headers. I also cleaned up the file structure a little bit - removing the main folder inside the pedestrian_detect folder - and updated the file paths referenced in all the CMakeLists files. I also ensured that each level of CMakeLists was referencing the correct SRC/private file directories. Currently, I'm repeating this process to make sure any files within the esp-idf-v5.1.1 folder are also referenced properly. 
 
-## Getting Started
+## Tuesday, May 27, 2025
+### Task
+Make sure files in the esp-idf-v5.1.1 were referenced properly.
+### Notes
+N/A
+### What I Accomplished
+I found including the file path to esp_vfs_fat.h in main/CMakeLists was incorrect and was a version mismatch as the ESP-IDF version I was using was 5.4.1 and the path was meant for version 5.1.1. To fix this, I put fatfs under the REQUIRES header instead. This resolved the final filepath issue, leaving only compilation issues afterwards. The bulk of compilation issues seem to be coming from single_image_ped_detect.hpp and single_image_ped_detect.cpp, which were generated and thus likely don't entirely work with the existing file structure. My next steps will be to copy in the existing pedestrian_detect code and modify along the way as necessary for our purpose. 
 
-### Software Requirements
+## Wednesday, May 28, 2025
+### Task
+Resolve all compilation errors and generate code to detect pedestrians from an SD card. 
+### Notes
+Maintaining a simple file structure minimizes most version and compilation errors. 
+### What I Accomplished
+I cleaned up the project file structure in order for it to mirror the original pedestrian_detect file structure. This led to much of the version and file errors being resolved as the project was able to properly pull relevant files from the Espressif GitHub repository and generate proper build files. I utilized Gemini to generate sample code for detecting pedestrians using the SD card, which I hope to test soon with example images. 
 
-- **ESP-IDF**  
+## Friday, May 30, 2025
+### Task
+Debug code for detecting pedestrians from an SD card.
+### Notes
+N/A
+### What I Accomplished
+I downloaded the .zip file with the test images and loaded them onto the SD card. I then imported the contents of the SD card into my project and put the file path for one of the images in the generated code. However, I ran into compilation issues with the code, particularly regarding the JPEG decoder to convert the JPG image files to a format useful for the code. I tried debugging by ensuring the right file was referenced as a header - however, the compiler was not able to find this file in the system. I will do research and hopefully find videos detailing this functionality as there is a possibility this may not be compatible with the ESP32-S3 (the device we have). 
 
-ESP-DL runs based on ESP-IDF. For detailed instructions on how to get ESP-IDF, please see [ESP-IDF Programming Guide](https://idf.espressif.com).
-
-> Please use [ESP-IDF](https://github.com/espressif/esp-idf) `release/v5.3` or above.
-
-
-- **ESP-PPQ**
-
-ESP-PPQ is a quantization tool based on ppq. If you want to quantize your own model, please install esp-ppq using the following command:
-```
-pip uninstall ppq
-pip install git+https://github.com/espressif/esp-ppq.git
-```
-Use esp-ppq with docker:
-```
-docker build -t esp-ppq:your_tag https://github.com/espressif/esp-ppq.git
-```
-
-### Model Quantization
-
-First, please refer to the [ESP-DL Operator Support State](./operator_support_state.md) to ensure that the operators in your model are already supported.  
-
-ESP-PPQ can directly read ONNX models for quantization. Pytorch and TensorFlow need to be converted to ONNX models first, so make sure your model can be converted to ONNX models. For more details about quantization, please refer to
-
-[how to quantize model](https://docs.espressif.com/projects/esp-dl/en/latest/tutorials/how_to_quantize_model.html)  
-[how to quantize MobileNetV2](https://docs.espressif.com/projects/esp-dl/en/latest/tutorials/how_to_deploy_mobilenetv2.html#model-quantization)  
-[how to quantize YOLO11n](https://docs.espressif.com/projects/esp-dl/en/latest/tutorials/how_to_deploy_yolo11n.html#model-quantization)  
-
-
-### Model Deployment
-ESP-DL provides a series of API to quickly load and run models.  A typical example is as follows:
-
-[how to load test profile model](https://docs.espressif.com/projects/esp-dl/en/latest/tutorials/how_to_load_test_profile_model.html)  
-[how to run model](https://docs.espressif.com/projects/esp-dl/en/latest/tutorials/how_to_run_model.html)  
-
-
-## Support Models
-
-[Pedestrian Detection](./models/pedestrian_detect/)     
-[Human Face Detection](./models/human_face_detect/)     
-[Human Face Recognition](./models/human_face_recognition/)     
-[Imagenet Classification (MobileNetV2)](./models/imagenet_cls/)    
-[COCO Detection (YOLO11n)](./models/coco_detect/)    
-[CAT Detection (​​ESPDet-Pico)](./models/cat_detect/) 
-
-## Support Operators
-
-If you encounter unsupported operators, please point them out in the [issues](https://github.com/espressif/esp-dl/issues), and we will support them as soon as possible. Contributions to this ESP-DL are also welcomed, please refer to [Creating a New Module (Operator)](https://docs.espressif.com/projects/esp-dl/en/latest/tutorials/how_to_add_a_new_module%28operator%29.html) for more details.
-
-[ESP-DL Operator Support State](./operator_support_state.md)
+## Tuesday, June 3, 2025
+### Task
+Get the JPEG decoder example from Espressif to work with the device.
+### Notes
+It seems the JPEG decoder example is likely not supported anymore, as various build dependencies weren't being found and the issues were replicated with other devices. 
+### What I Accomplished
+I attempted to debug the runtime errors happening when the JPEG decoder example was running. I was told by my mentor to try setting a device target and installing Python extension requirements; however, this did not resolve the issue. I also tried changing the ESP-IDF extension configuration to use Espressif instead of GitHub, but this did not help, either. After being notified by my mentor that the script wasn't running on his end, either, we came to the conclusion that this example is likely not supported anymore with the current version of ESP-IDF. My mentor also found another example closer to our end goal - a version of pedestrian_detect that embeds an image in firmware, runs JPEG decoding, and prints out the locations of pedestrians in the image to the terminal. From here on out, I will work off of this script. 
