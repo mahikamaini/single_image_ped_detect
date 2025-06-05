@@ -86,3 +86,11 @@ Get the JPEG decoder example from Espressif to work with the device.
 It seems the JPEG decoder example is likely not supported anymore, as various build dependencies weren't being found and the issues were replicated with other devices. 
 ### What I Accomplished
 I attempted to debug the runtime errors happening when the JPEG decoder example was running. I was told by my mentor to try setting a device target and installing Python extension requirements; however, this did not resolve the issue. I also tried changing the ESP-IDF extension configuration to use Espressif instead of GitHub, but this did not help, either. After being notified by my mentor that the script wasn't running on his end, either, we came to the conclusion that this example is likely not supported anymore with the current version of ESP-IDF. My mentor also found another example closer to our end goal - a version of pedestrian_detect that embeds an image in firmware, runs JPEG decoding, and prints out the locations of pedestrians in the image to the terminal. From here on out, I will work off of this script. 
+
+## Wednesday, June 4, 2025
+### Task
+Begin working on adapting the new pedestrian_detect example to take an image from the SD card. 
+### Notes
+N/A
+### What I Accomplished
+I reconfigured the GitHub repository with the relevant files for the new pedestrian_detect example, though it did result in me needing to create a new one for that purpose. However, I was able to get the repository up and running. After this, I ran prompts to modify the existing code to pull images from an SD card rather than embedding it in the firmware; however, this led to many compilation issues. Moving forward, I plan to break down the code on my own and figure out what specific parts need to be changed, using existing YouTube videos as reference. 
