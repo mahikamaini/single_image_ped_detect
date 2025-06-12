@@ -94,3 +94,11 @@ Begin working on adapting the new pedestrian_detect example to take an image fro
 N/A
 ### What I Accomplished
 I reconfigured the GitHub repository with the relevant files for the new pedestrian_detect example, though it did result in me needing to create a new one for that purpose. However, I was able to get the repository up and running. After this, I ran prompts to modify the existing code to pull images from an SD card rather than embedding it in the firmware; however, this led to many compilation issues. Moving forward, I plan to break down the code on my own and figure out what specific parts need to be changed, using existing YouTube videos as reference. 
+
+## Thursday, June 5, 2025
+### Task
+Generate and debug code for pulling images from an SD card based on the new pedestrian_detect example. 
+### Notes
+It seems that the SD card images need to be properly sized in order for the program to work. Currently, the images are too large to be decoded. 
+### What I Accomplished
+I generated a few lines to change the functionality of the example code to pull images from the SD card. The program was able to build, flash, and monitor; however, I kept getting an error that displayed "Failed to allocate output buffer". After some research, I learned that this error was due to the program not being able to allocate the proper amount of memory to store the image after it's decoded. From here, I plan to manually resize the image to 240 x 280 pixels in Canva and upload it to the SD card and see if the issue is resolved. Afterward, I hope to create a resize function within the code for efficiency and functionality. 
