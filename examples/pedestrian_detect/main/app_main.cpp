@@ -52,8 +52,8 @@ dl::image::jpeg_img_t jpeg_img = {
 
 // decode jpeg into image we can use
 ESP_LOGE(TAG, "trying to decode image");
-dl::image::img_t resized_img = resize(jpeg_img, 240, 280); // need to write
-auto img = sw_decode_jpeg(resized_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888);
+// dl::image::img_t resized_img = resize(jpeg_img, 240, 280); // need to write
+auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888);
 
 PedestrianDetect *detect = new PedestrianDetect();
 
