@@ -110,3 +110,11 @@ Resize one test image to 240 x 240 pixels and see if the memory issue resolves a
 The image does indeed need to be 240 x 240 pixels for enough memory to be allocated towards decoding. 
 ### What I Accomplished
 I uploaded one of the test set images into Canva and resized it. However, after flashing it to the SD card and running the model on it, nothing was printed to the terminal - leaving me unsure whether the model was working or if it was simply because the pedestrian was not clearly visible in the image. After resizing and flashing another image with a clear view of the pedestrian, running the model resulted in a model prediction being printed to the terminal, indicating working success of the model on properly sized images. From here, I began to work on a function that would automatically resize the image to 240 x 240 pixels, although I've been running into numerous issues, especially with storage. 
+
+## Friday, June 13, 2025
+### Task
+Continue work on a resizing function for the input JPEG images. 
+### Notes
+N/A
+### What I Accomplished
+While trying to write the function, I kept getting the "Failed to allocate output buffer" error, indicating the input JPEG image may be too large for the ESP32 to handle. I tried using grayscale images to save on memory; however, it turned out that the pedestrian detect model did not support grayscale as a valid image format. Upon further research, I learned about optimizing the board's external RAM (SPI RAM). I made sure to check the menuconfig settings and tried adding commands to the code to utilize this, but the original error still persisted. Moving forward, I will try to compress the test image beforehand to see if that helps to resolve the error and work from there. 
