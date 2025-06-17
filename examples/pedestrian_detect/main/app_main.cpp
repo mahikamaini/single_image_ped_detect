@@ -9,7 +9,7 @@
 #include "dl_image_jpeg.hpp"
 #include "dl_image_process.hpp"
 
-#define IMAGE_PATH "/sdcard/compressed ped image.JPG"
+#define IMAGE_PATH "/sdcard/Compressed_IMG_0011.JPG"
 const char *TAG = "pedestrian_detect";
 
 extern "C" void app_main(void) {
@@ -58,7 +58,12 @@ if (!resized_img.data) {
 dl::image::resize(img, resized_img, dl::image::DL_IMAGE_INTERPOLATE_BILINEAR);
 ESP_LOGI(TAG, "decoding done!");
 
+ESP_LOGI(TAG, "going to run ped detect model");
+heap_caps_free(image_buffer);
+heap_caps_free(img.data);
+ESP_LOGI(TAG, "Free PSRAM before model: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 PedestrianDetect *detect = new PedestrianDetect();
+ESP_LOGI(TAG, "saving results");
 auto &detect_results = detect->run(resized_img);
 
 ESP_LOGI(TAG, "model is going to run and write to the .txt file");
@@ -85,12 +90,8 @@ if (!output_file) {
 ESP_LOGI(TAG, "model is done running");
 
 delete detect;
-heap_caps_free(img.data);
-ESP_LOGI(TAG, "Freed img.data");
 heap_caps_free(resized_img.data);
 ESP_LOGI(TAG, "Freed resized_img.data");
-heap_caps_free(image_buffer);
-ESP_LOGI(TAG, "Freed image_buffer");
 
 #if CONFIG_PEDESTRIAN_DETECT_MODEL_IN_SDCARD
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
