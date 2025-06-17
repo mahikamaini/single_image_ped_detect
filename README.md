@@ -118,3 +118,11 @@ Continue work on a resizing function for the input JPEG images.
 N/A
 ### What I Accomplished
 While trying to write the function, I kept getting the "Failed to allocate output buffer" error, indicating the input JPEG image may be too large for the ESP32 to handle. I tried using grayscale images to save on memory; however, it turned out that the pedestrian detect model did not support grayscale as a valid image format. Upon further research, I learned about optimizing the board's external RAM (SPI RAM). I made sure to check the menuconfig settings and tried adding commands to the code to utilize this, but the original error still persisted. Moving forward, I will try to compress the test image beforehand to see if that helps to resolve the error and work from there. 
+
+## Monday, June 16, 2025
+### Task
+Test out compressing the original image to see if the resize function works. 
+### Notes
+The original image must be a maximum of ~ 200 KB in order for it to be small enough for the resize function to work. However, this leads to a lower model prediction confidence. 
+### What I Accomplished
+Using an online image compressor, I compressed the original JPEG image to about 500 KB from 719 KB. However, error still persisted. I then compressed the image further to 204 KB, and the resize function was able to run and print out model predictions to the terminal. However, I noticed that the model confidence dropped down to 83% from 96% beforehand. This indicated to me that the compressing of the image decreased the quality of predictions. During our weekly meeting, Ben and I discussed creating a Python script in the local filesystem to reduce the tediousness of compressing and downloading images from external sites. In addition, we discussed implementing multi-image detection - in which the program and detection model runs on multiple images on the SD card. If we are able to get this feature working, we may be able to look at putting together a report to submit to the CamTrapAI Workshop Series by July 1st. 
