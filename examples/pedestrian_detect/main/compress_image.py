@@ -29,7 +29,7 @@ def compressMe(file, verbose = False):
     picture.save("Compressed_"+file, 
                  "JPEG", 
                  optimize = True, 
-                 quality = 30)
+                 quality = 20)
     return
 
 # Define a main function
