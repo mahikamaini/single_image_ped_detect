@@ -42,8 +42,10 @@ dl::image::jpeg_img_t jpeg_img = {
 // decode jpeg into image we can use
 ESP_LOGI(TAG, "starting image decoding");
 ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB565);
-ESP_LOGI(TAG, "image is decoding");
+auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB565, 0, 4); // currently setting scale ratio to 4 (1/4 original image size)
+ESP_LOGI(TAG, "image is decoded");
+ESP_LOGI(TAG, "Free SPIRAM after decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+
 dl::image::img_t resized_img;
 resized_img.width = 240;
 resized_img.height = 240;
@@ -90,8 +92,12 @@ if (!output_file) {
 ESP_LOGI(TAG, "model is done running");
 
 delete detect;
+heap_caps_free(img.data);
+ESP_LOGI(TAG, "Freed img.data");
 heap_caps_free(resized_img.data);
 ESP_LOGI(TAG, "Freed resized_img.data");
+heap_caps_free(image_buffer);
+ESP_LOGI(TAG, "Freed image_buffer");
 
 #if CONFIG_PEDESTRIAN_DETECT_MODEL_IN_SDCARD
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
