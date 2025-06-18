@@ -9,13 +9,13 @@
 #include "dl_image_jpeg.hpp"
 #include "dl_image_process.hpp"
 
-#define IMAGE_PATH "/sdcard/Compressed_IMG_0011.JPG"
+#define IMAGE_PATH "/sdcard/IMG_0011.JPG"
 const char *TAG = "pedestrian_detect";
 
 extern "C" void app_main(void) {
 
 ESP_ERROR_CHECK(bsp_sdcard_mount());
-ESP_LOGE(TAG, "SD card is mounted!");
+ESP_LOGI(TAG, "SD card is mounted!");
 
 FILE *file = fopen(IMAGE_PATH, "rb");
 if (!file) {
@@ -42,7 +42,7 @@ dl::image::jpeg_img_t jpeg_img = {
 // decode jpeg into image we can use
 ESP_LOGI(TAG, "starting image decoding");
 ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB565, 0, 4); // currently setting scale ratio to 4 (1/4 original image size)
+auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888, 0, 2); // currently setting scale ratio to 4 (1/4 original image size)
 ESP_LOGI(TAG, "image is decoded");
 ESP_LOGI(TAG, "Free SPIRAM after decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 
@@ -57,7 +57,13 @@ if (!resized_img.data) {
         heap_caps_free(img.data);
         return;
     }
-dl::image::resize(img, resized_img, dl::image::DL_IMAGE_INTERPOLATE_BILINEAR);
+
+int crop_size = img.height; // 768
+int offset_x = (img.width - crop_size) / 2;
+int offset_y = 0;
+std::vector<int> crop_area = {offset_x, offset_y, crop_size, crop_size};
+
+dl::image::resize(img, resized_img, dl::image::DL_IMAGE_INTERPOLATE_BILINEAR, 0, nullptr, crop_area);
 ESP_LOGI(TAG, "decoding done!");
 
 ESP_LOGI(TAG, "going to run ped detect model");
@@ -92,12 +98,8 @@ if (!output_file) {
 ESP_LOGI(TAG, "model is done running");
 
 delete detect;
-heap_caps_free(img.data);
-ESP_LOGI(TAG, "Freed img.data");
 heap_caps_free(resized_img.data);
 ESP_LOGI(TAG, "Freed resized_img.data");
-heap_caps_free(image_buffer);
-ESP_LOGI(TAG, "Freed image_buffer");
 
 #if CONFIG_PEDESTRIAN_DETECT_MODEL_IN_SDCARD
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
