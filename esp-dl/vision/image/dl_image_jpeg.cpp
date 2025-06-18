@@ -13,7 +13,7 @@
 static const char *TAG = "dl_image_jpeg";
 namespace dl {
 namespace image {
-img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t caps)
+img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t caps, int scale_ratio)
 {
     assert(caps == 0 || caps == DL_IMAGE_CAP_RGB565_BIG_ENDIAN);
     img_t img;
@@ -38,25 +38,55 @@ img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t c
                              .block_enable = false};
 
     jpeg_dec_handle_t jpeg_dec = NULL;
-    if (jpeg_dec_open(&cfg, &jpeg_dec) != JPEG_ERR_OK) {
-        ESP_LOGE(TAG, "Failed to open jpeg decoder.");
-        return {};
-    }
+    // if (jpeg_dec_open(&cfg, &jpeg_dec) != JPEG_ERR_OK) {
+    //     ESP_LOGE(TAG, "Failed to open jpeg decoder.");
+    //     return {};
+    // }
 
     jpeg_dec_io_t jpeg_io = {};
     jpeg_io.inbuf = (uint8_t *)jpeg_img.data;
     jpeg_io.inbuf_len = jpeg_img.data_len;
+
+    // parse header to get original size
+    if (jpeg_dec_open(&cfg, &jpeg_dec) != JPEG_ERR_OK) {
+        ESP_LOGE(TAG, "Failed to open jpeg decoder.");
+        return {};
+    }
     jpeg_dec_header_info_t out_info = {};
     if (jpeg_dec_parse_header(jpeg_dec, &jpeg_io, &out_info) != JPEG_ERR_OK) {
         ESP_LOGE(TAG, "Failed to parse jpeg header.");
         jpeg_dec_close(jpeg_dec);
         return {};
     }
+    jpeg_dec_close(jpeg_dec);  // close so we can reopen with scale
+    ESP_LOGI(TAG, "Original JPEG resolution: %dx%d", out_info.width, out_info.height);
+
+    // pick a scale ratio
+    if (scale_ratio > 0) {
+        cfg.scale.width = out_info.width / scale_ratio;
+        cfg.scale.height = out_info.height / scale_ratio;
+    } else {
+        cfg.scale.width = 0;
+        cfg.scale.height = 0;
+    }
+
+    // reopen with scale
+    if (jpeg_dec_open(&cfg, &jpeg_dec) != JPEG_ERR_OK) {
+        ESP_LOGE(TAG, "Failed to reopen jpeg decoder with scale.");
+        return {};
+    }
+    if (jpeg_dec_parse_header(jpeg_dec, &jpeg_io, &out_info) != JPEG_ERR_OK) {
+        ESP_LOGE(TAG, "Failed to parse jpeg header again.");
+        jpeg_dec_close(jpeg_dec);
+        return {};
+    }
 
     img.width = out_info.width;
     img.height = out_info.height;
+
     size_t out_buf_len = get_img_byte_size(img);
-    img.data = heap_caps_aligned_alloc(16, out_buf_len, MALLOC_CAP_DEFAULT);
+    ESP_LOGE(TAG, "img_byte_size for decoding: %u", out_buf_len);
+    img.data = heap_caps_aligned_alloc(16, out_buf_len, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (!img.data) {
         ESP_LOGE(TAG, "Failed to alloc output buffer.");
         jpeg_dec_close(jpeg_dec);
