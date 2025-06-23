@@ -144,3 +144,11 @@ Test out decoder resizing and note how it affects the model confidence.
 N/A
 ### What I Accomplished
 I tested out the decoder function that Ben had edited to specify the resulting image size (e.g. 2 == 1/2 original size). However, I found that this only took common factors - otherwise, the program would crash. With a factor of 4 (1/4 of the original image size), the model confidence was 76%, while a factor of 2 resulted in 83%. This was expected as a larger scale allows for more of the original image details to be preserved. After doing some further research, ChatGPT suggested utilizing an existing crop parameter in the resize() function to crop the center of the image and then resize it to reduce distortion. I incorporated this into the code and the confidence was 89%. After further discussion, though, Ben and I realized this would not work for all the images, as the pedestrian isn't always necessarily in the center of the image. From here, ChatGPT gave the idea to perform left and right crops if the center crop had an accuracy lower than a specified threshold or detected no pedestrians at all. 
+
+## Friday, June 20, 2025
+### Task
+Implement left and right crops with the model. 
+### Notes
+N/A
+### What I Accomplished
+I implemented the left and right image crops with a threshold of 85%. This means that if the center crop has an accuracy lower than 85%, it will move on to the left crop, then the right crop. I tested this model on several images and I achieved confidence of mostly 81% and higher. Ben suggested to make each of the crops 240x240 pixels instead of cropping and then resizing the image to save on memory. I attempted this method; however, when testing on an image with a clear pedestrian in it, the model detected no pedestrians. From here, I moved on to implement running the program on multiple images in the SD card. However, it only seemed to be able to process 3 images or so before crashing, and wasn't an issue related to the file itself. I checked the memory logs and there seems to be plenty of PSRAM and SPIRAM to support the image, so the exact cause of this issue is unknown to me, other than that the resize() function failed on the fourth image. 
