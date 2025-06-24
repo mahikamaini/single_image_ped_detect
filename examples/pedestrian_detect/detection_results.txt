@@ -1,0 +1,251 @@
+Image: /sdcard/IMG_0016.JPG -> 1 pedestrian(s) detected:
+[score: 0.81, x1: 39, y1: 66, x2: 118, y2: 174]
+----
+Image: /sdcard/IMG_0017.JPG -> 1 pedestrian(s) detected:
+[score: 0.61, x1: 72, y1: 58, x2: 140, y2: 165]
+----
+Image: /sdcard/IMG_0016.JPG -> 1 pedestrian(s) detected:
+[score: 0.81, x1: 39, y1: 66, x2: 118, y2: 174]
+----
+Image: /sdcard/IMG_0017.JPG -> 1 pedestrian(s) detected:
+[score: 0.61, x1: 72, y1: 58, x2: 140, y2: 165]
+----
+Image: /sdcard/IMG_0018.JPG -> 1 pedestrian(s) detected:
+[score: 0.81, x1: 86, y1: 78, x2: 165, y2: 177]
+----
+Image: /sdcard/IMG_0019.JPG -> 1 pedestrian(s) detected:
+[score: 0.79, x1: 57, y1: 77, x2: 139, y2: 173]
+----
+Image: /sdcard/IMG_0020.JPG -> 1 pedestrian(s) detected:
+[score: 0.83, x1: 91, y1: 62, x2: 177, y2: 177]
+----
+Image: /sdcard/IMG_0021.JPG -> 1 pedestrian(s) detected:
+[score: 0.63, x1: 54, y1: 83, x2: 140, y2: 194]
+----
+Image: /sdcard/IMG_0022.JPG -> 1 pedestrian(s) detected:
+[score: 0.69, x1: 0, y1: 79, x2: 122, y2: 195]
+----
+Image: /sdcard/IMG_0023.JPG -> 1 pedestrian(s) detected:
+[score: 0.71, x1: 83, y1: 76, x2: 157, y2: 189]
+----
+Image: /sdcard/IMG_0024.JPG -> 1 pedestrian(s) detected:
+[score: 0.88, x1: 49, y1: 44, x2: 125, y2: 193]
+----
+Image: /sdcard/IMG_0025.JPG -> 1 pedestrian(s) detected:
+[score: 0.87, x1: 34, y1: 44, x2: 105, y2: 188]
+----
+Image: /sdcard/IMG_0026.JPG -> 1 pedestrian(s) detected:
+[score: 0.67, x1: 116, y1: 47, x2: 193, y2: 154]
+----
+Image: /sdcard/IMG_0027.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0028.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0075.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0076.JPG -> 1 pedestrian(s) detected:
+[score: 0.83, x1: 48, y1: 34, x2: 101, y2: 166]
+----
+Image: /sdcard/IMG_0077.JPG -> 1 pedestrian(s) detected:
+[score: 0.88, x1: 18, y1: 31, x2: 88, y2: 170]
+----
+Image: /sdcard/IMG_0078.JPG -> 1 pedestrian(s) detected:
+[score: 0.89, x1: 7, y1: 38, x2: 103, y2: 214]
+----
+Image: /sdcard/IMG_0079.JPG -> 1 pedestrian(s) detected:
+[score: 0.88, x1: 55, y1: 36, x2: 128, y2: 197]
+----
+Image: /sdcard/IMG_0080.JPG -> 1 pedestrian(s) detected:
+[score: 0.86, x1: 63, y1: 51, x2: 167, y2: 233]
+----
+Image: /sdcard/IMG_0081.JPG -> 1 pedestrian(s) detected:
+[score: 0.91, x1: 94, y1: 48, x2: 190, y2: 238]
+----
+Image: /sdcard/IMG_0082.JPG -> 1 pedestrian(s) detected:
+[score: 0.91, x1: 91, y1: 47, x2: 182, y2: 237]
+----
+Image: /sdcard/IMG_0083.JPG -> 1 pedestrian(s) detected:
+[score: 0.88, x1: 94, y1: 52, x2: 188, y2: 239]
+----
+Image: /sdcard/IMG_0084.JPG -> 1 pedestrian(s) detected:
+[score: 0.91, x1: 83, y1: 57, x2: 198, y2: 238]
+----
+Image: /sdcard/IMG_0096.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0097.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0098.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0099.JPG -> 1 pedestrian(s) detected:
+[score: 0.69, x1: 124, y1: 31, x2: 239, y2: 237]
+----
+Image: /sdcard/IMG_0100.JPG -> 1 pedestrian(s) detected:
+[score: 0.91, x1: 95, y1: 62, x2: 239, y2: 237]
+----
+Image: /sdcard/IMG_0101.JPG -> 1 pedestrian(s) detected:
+[score: 0.94, x1: 72, y1: 63, x2: 226, y2: 237]
+----
+Image: /sdcard/IMG_0102.JPG -> 1 pedestrian(s) detected:
+[score: 0.90, x1: 80, y1: 56, x2: 205, y2: 237]
+----
+Image: /sdcard/IMG_0103.JPG -> 1 pedestrian(s) detected:
+[score: 0.88, x1: 98, y1: 53, x2: 179, y2: 232]
+----
+Image: /sdcard/IMG_0104.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0105.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0106.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0001.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0002.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0003.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0004.JPG -> 1 pedestrian(s) detected:
+[score: 0.56, x1: 141, y1: 104, x2: 239, y2: 239]
+----
+Image: /sdcard/IMG_0005.JPG -> 1 pedestrian(s) detected:
+[score: 0.81, x1: 170, y1: 36, x2: 239, y2: 238]
+----
+Image: /sdcard/IMG_0006.JPG -> 1 pedestrian(s) detected:
+[score: 0.72, x1: 142, y1: 45, x2: 239, y2: 238]
+----
+Image: /sdcard/IMG_0007.JPG -> 1 pedestrian(s) detected:
+[score: 0.94, x1: 121, y1: 52, x2: 239, y2: 236]
+----
+Image: /sdcard/IMG_0008.JPG -> 1 pedestrian(s) detected:
+[score: 0.87, x1: 136, y1: 60, x2: 239, y2: 237]
+----
+Image: /sdcard/IMG_0009.JPG -> 1 pedestrian(s) detected:
+[score: 0.92, x1: 116, y1: 64, x2: 239, y2: 238]
+----
+Image: /sdcard/IMG_0010.JPG -> 1 pedestrian(s) detected:
+[score: 0.91, x1: 105, y1: 75, x2: 237, y2: 235]
+----
+Image: /sdcard/IMG_0011.JPG -> 1 pedestrian(s) detected:
+[score: 0.89, x1: 121, y1: 60, x2: 219, y2: 238]
+----
+Image: /sdcard/IMG_0012.JPG -> 1 pedestrian(s) detected:
+[score: 0.87, x1: 121, y1: 69, x2: 221, y2: 235]
+----
+Image: /sdcard/IMG_0013.JPG -> 1 pedestrian(s) detected:
+[score: 0.86, x1: 69, y1: 66, x2: 187, y2: 232]
+----
+Image: /sdcard/IMG_0014.JPG -> 1 pedestrian(s) detected:
+[score: 0.61, x1: 52, y1: 51, x2: 130, y2: 129]
+----
+Image: /sdcard/IMG_0015.JPG -> 1 pedestrian(s) detected:
+[score: 0.88, x1: 39, y1: 44, x2: 99, y2: 171]
+----
+Image: /sdcard/IMG_0043.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0044.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0045.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0046.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0047.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0053.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0054.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0055.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0056.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0057.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0058.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0059.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0060.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0061.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0062.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0063.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0064.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0065.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0066.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0067.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0071.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0072.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0073.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0074.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0107.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0108.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0109.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0110.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0111.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0112.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0113.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0114.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0115.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0116.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0117.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0118.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0119.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0120.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0121.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0122.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0123.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0124.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0029.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0030.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0032.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0033.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0034.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0035.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0036.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0037.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0038.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0039.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0040.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0041.JPG -> No pedestrian detected
+----
+Image: /sdcard/IMG_0042.JPG -> No pedestrian detected
+----
