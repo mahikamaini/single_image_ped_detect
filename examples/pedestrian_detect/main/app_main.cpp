@@ -32,8 +32,10 @@ while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type != DT_REG) continue; // Skip if not a regular file
 
     const char *fname = entry->d_name;
+    
+    if (strncmp(fname, "._", 2) == 0 || fname[0] == '.') continue;
     if (!(strstr(fname, ".JPG") || strstr(fname, ".jpg"))) continue; // Only JPGs
-
+    
     char image_path[272];
     snprintf(image_path, sizeof(image_path), "/sdcard/%s", fname);
 
