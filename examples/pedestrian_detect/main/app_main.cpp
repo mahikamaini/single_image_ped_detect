@@ -11,7 +11,6 @@
 #include "dl_image_jpeg.hpp"
 #include "dl_image_process.hpp"
 
-// #define image_path "/sdcard/IMG_0015.JPG"
 const char *TAG = "pedestrian_detect";
 
 extern "C" void app_main(void) {
@@ -27,7 +26,7 @@ if (!dir) {
 
 struct dirent *entry;
 PedestrianDetect *detect = new PedestrianDetect();
-// int image_count = 0;
+
 while ((entry = readdir(dir)) != NULL) {
     if (entry->d_type != DT_REG) continue; // Skip if not a regular file
 
@@ -83,6 +82,7 @@ while ((entry = readdir(dir)) != NULL) {
     float best_score = -1.0;
     std::vector<dl::detect::result_t> best_results;
 
+    int crop_number = 0;
     for (size_t i = 0; i < crop_areas.size(); ++i) {
         const auto& area = crop_areas[i];
         ESP_LOGI(TAG, "Trying crop #%d at x=%d", (int)i + 1, area[0]);
@@ -117,6 +117,7 @@ while ((entry = readdir(dir)) != NULL) {
         if (!results.empty() && results.front().score > best_score) {
             best_score = results.front().score;
             best_results = std::vector<dl::detect::result_t>(results.begin(), results.end());
+            crop_number = (int) i;
         }
 
         heap_caps_free(cropped_img.data);
@@ -126,6 +127,7 @@ while ((entry = readdir(dir)) != NULL) {
     }
 
     ESP_LOGI(TAG, "saving results");
+
 
     ESP_LOGI(TAG, "model is going to run and write to the .txt file");
     FILE *output_file = fopen("/sdcard/detection_results.txt", "a"); // a = append
@@ -139,10 +141,10 @@ while ((entry = readdir(dir)) != NULL) {
             for (const auto &res : best_results) {
                 fprintf(output_file, "[score: %.2f, x1: %d, y1: %d, x2: %d, y2: %d]\n",
                         res.score,
-                        res.box[0],
-                        res.box[1],
-                        res.box[2],
-                        res.box[3]);
+                        2* (res.box[0] * (crop_size / 240) + crop_areas[crop_number][0]),
+                        2*(res.box[1]  * (crop_size / 240) + crop_areas[crop_number][1]),
+                        2*(res.box[2]  * (crop_size / 240) + crop_areas[crop_number][0]),
+                        2* (res.box[3]  * (crop_size / 240) + crop_areas[crop_number][1]));
             }
         }
         fprintf(output_file, "----\n"); // Separator between images
@@ -153,11 +155,6 @@ while ((entry = readdir(dir)) != NULL) {
     heap_caps_free(img.data);       
     heap_caps_free(image_buffer);
 
-    // image_count++;
-    // if (image_count >= 3) {
-    //     ESP_LOGI(TAG, "Processed %d images, restarting to free memory...", image_count);
-    //     esp_restart();
-    // }    
 }
 
 delete detect;  
