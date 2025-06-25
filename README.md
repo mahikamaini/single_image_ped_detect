@@ -160,3 +160,11 @@ Debug the resize() function failure.
 It seems that MacOS generates hidden files on SD cards that start with _. and end with .JPG. Thus, the program needs to have a check for these kinds of files so it will not attempt to read them. 
 ### What I Accomplished
 I ran through various solutions to try and debug this function. Ben had told me the program worked perfectly with his PC, so the issue was likely with my local environment or SD card. I reformatted my SD card to FAT32 but this did not resolve the issue. I also tried recloning the GitHub repository locally but the same issue persisted. During our meeting, Ben suggested downgrading the ESP-IDF version from 5.4.1 to 5.4.0. However, after further research, ChatGPT suggested that MacOS may be generating hidden files on the SD card, so through Terminal, I looked and discovered that they did exist on the SD card. From this knowledge, I concluded the issue with the resize() function crashing was that the program was attempting to read these hidden files which had no content in them. With this, I added a condition to the program to not read any files that started with "_." - as this was the naming scheme for these hidden files. Moving forward, I plan to create a Python script to generate a CSV file that compares the model prediction with the results in terms of finding a pedestrian. This will allow me to create a truth table in the future. 
+
+## Tuesday, June 24, 2025
+### Task
+Create a Python script to generate a CSV file comparing model predictions vs. actual results. 
+### Notes
+N/A
+### What I Accomplished
+I created a Python script within the project (compare_results.py) that goes through each of the subfolders of the test set and matches the name of each image path to the results on detection_results.txt. For this, I created a match() function that took two parameters - the path to detection_results.txt and the name of the image path. This function extracts the image name from each line of the file and matches it to the given image name. Then, depending on what the correct line reads, it assigns "FALSE" if it says "No pedestrian detected" and "TRUE" if it says "pedestrian(s) detected". Finally, these are all written to a CSV file called ground_truth.csv.
