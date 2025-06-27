@@ -168,3 +168,11 @@ Create a Python script to generate a CSV file comparing model predictions vs. ac
 N/A
 ### What I Accomplished
 I created a Python script within the project (compare_results.py) that goes through each of the subfolders of the test set and matches the name of each image path to the results on detection_results.txt. For this, I created a match() function that took two parameters - the path to detection_results.txt and the name of the image path. This function extracts the image name from each line of the file and matches it to the given image name. Then, depending on what the correct line reads, it assigns "FALSE" if it says "No pedestrian detected" and "TRUE" if it says "pedestrian(s) detected". Finally, these are all written to a CSV file called ground_truth.csv.
+
+## Wednesday, June 25, 2025
+### Task
+Modify the printed x and y coordinates in the program to be relative to the original image rather than the resized image. 
+### Notes
+N/A
+### What I Accomplished
+I multiplied the original number by the crop_size variable divided by 240 in order to get the scale factor for the cropping. I then created a variable called crop_number to keep track of the crop performed (0 = center crop, 1 = left crop, 2 = right crop). From here, I used this variable to get to the right index in crop_areas (which is a two-dimensional vector). Each crop vector has four numbers: an x-offset, y-offset, width, and height. Depending on each coordinate, I either put index 0 (x-offset) or index 1 (y-offset). This value was added to the division before, and the entire equation multiplied by 2 as the original image was compressed by 1/2. 
