@@ -141,10 +141,10 @@ while ((entry = readdir(dir)) != NULL) {
             for (const auto &res : best_results) {
                 fprintf(output_file, "[score: %.2f, x1: %d, y1: %d, x2: %d, y2: %d]\n",
                         res.score,
-                        2* (res.box[0] * (crop_size / 240) + crop_areas[crop_number][0]),
-                        2*(res.box[1]  * (crop_size / 240) + crop_areas[crop_number][1]),
-                        2*(res.box[2]  * (crop_size / 240) + crop_areas[crop_number][0]),
-                        2* (res.box[3]  * (crop_size / 240) + crop_areas[crop_number][1]));
+                        res.box[0] + crop_areas[crop_number][0],
+                        res.box[1]  + crop_areas[crop_number][1],
+                        res.box[2] + crop_areas[crop_number][0],
+                        res.box[3] + crop_areas[crop_number][1]);
             }
         }
         fprintf(output_file, "----\n"); // Separator between images
