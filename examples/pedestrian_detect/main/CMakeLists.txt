@@ -2,7 +2,7 @@ set(src_dirs        ./)
 
 set(include_dirs    ./)
 
-set(requires        pedestrian_detect)
+set(requires        pedestrian_detect nvs_flash esp_http_client esp_wifi esp_event)
 
 if (IDF_TARGET STREQUAL "esp32s3")
     list(APPEND requires esp32_s3_eye_noglib

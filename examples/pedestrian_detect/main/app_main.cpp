@@ -10,54 +10,181 @@
 #include "dl_image_define.hpp"
 #include "dl_image_jpeg.hpp"
 #include "dl_image_process.hpp"
+#include "nvs_flash.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_http_client.h"
+#include <vector>
+#include <string>
+#include <sstream>
+
+#define URL http://192.168.15.31:8000/image_list.txt
+#define WIFI_SSID "maini-IoT"
+#define WIFI_PWD "18112000"
+#define SERVER_IP "192.168.15.31"
+#define SERVER_PORT "8000"
 
 const char *TAG = "pedestrian_detect";
 
+static void wifi_init(void) {
+    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    wifi_config_t wifi_config = {};
+    strcpy((char*)wifi_config.sta.ssid, WIFI_SSID);
+    strcpy((char*)wifi_config.sta.password, WIFI_PWD);
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    ESP_ERROR_CHECK(esp_wifi_start());
+
+    ESP_LOGI(TAG, "Connecting to WiFi...");
+    esp_event_handler_instance_t instance_got_ip;
+    // Inside your wifi_init function
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                                                    IP_EVENT_STA_GOT_IP,
+                                                    [](void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+                                                        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+                                                        ESP_LOGI(TAG, "Connected to WiFi with IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
+                                                    },
+                                                    NULL,
+                                                    &instance_got_ip));
+    
+    // This part is simplified for clarity. In a real app, you'd use FreeRTOS event groups to wait.
+    // For this purpose, a simple delay is sufficient to allow connection before proceeding.
+    vTaskDelay(pdMS_TO_TICKS(10000)); // Wait 10 seconds for connection
+}
+
+
 extern "C" void app_main(void) {
+uint8_t mac_addr[6] = {0};
+    esp_wifi_get_mac(WIFI_IF_STA, mac_addr);
+    ESP_LOGI(TAG, "ESP32 MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
+             mac_addr[0], mac_addr[1], mac_addr[2],
+             mac_addr[3], mac_addr[4], mac_addr[5]);
+
+wifi_init();
+
+std::vector<std::string> image_paths;
+std::string file_list_buffer;
+
+char list_url[100];
+snprintf(list_url, sizeof(list_url), "http://%s:%s/image_list.txt", SERVER_IP, SERVER_PORT);
+
+esp_http_client_config_t config_list = { .url = list_url };
+esp_http_client_handle_t client_list = esp_http_client_init(&config_list);
+esp_http_client_open(client_list, 0);
+int content_length = esp_http_client_fetch_headers(client_list);
+file_list_buffer.resize(content_length);
+esp_http_client_read(client_list, &file_list_buffer[0], content_length);
+esp_http_client_close(client_list);
+esp_http_client_cleanup(client_list);
+
+std::stringstream ss(file_list_buffer);
+std::string line;
+
+while (std::getline(ss, line)) {
+    if (line.length() > 1) {
+       if (line.back() == '\r') {
+        line.pop_back();
+       }
+       image_paths.push_back(line); 
+    }
+}
+
+ESP_LOGI(TAG, "Successfully downloaded and parsed image list. Found %d images.", image_paths.size());
 
 ESP_ERROR_CHECK(bsp_sdcard_mount());
 ESP_LOGI(TAG, "SD card is mounted!");
 
-DIR *dir = opendir("/sdcard");
-if (!dir) {
-    ESP_LOGE(TAG, "Failed to open /sdcard: %s", strerror(errno));
-    return;
-}
+// DIR *dir = opendir("/sdcard");
+// if (!dir) {
+//     ESP_LOGE(TAG, "Failed to open /sdcard: %s", strerror(errno));
+//     return;
+// }
 
-struct dirent *entry;
+// struct dirent *entry;
 PedestrianDetect *detect = new PedestrianDetect();
 
-while ((entry = readdir(dir)) != NULL) {
-    if (entry->d_type != DT_REG) continue; // Skip if not a regular file
+// 3. Loop through each image path, download, and process
+    for (const auto& image_path : image_paths) {
+        char image_url[272];
+        // The find command on Mac/Linux prefixes with './', let's handle that
+        const char* path_to_use = image_path.c_str();
+        if (strncmp(path_to_use, "./", 2) == 0) {
+            path_to_use += 2;
+        }
+        snprintf(image_url, sizeof(image_url), "http://%s:%s/%s", SERVER_IP, SERVER_PORT, path_to_use);
+        ESP_LOGI(TAG, "Processing image: %s", image_url);
+        
+        uint8_t *image_buffer = nullptr;
+        
+        esp_http_client_config_t config_img = { .url = image_url, .timeout_ms = 15000 };
+        esp_http_client_handle_t client_img = esp_http_client_init(&config_img);
 
-    const char *fname = entry->d_name;
+        if (esp_http_client_open(client_img, 0) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to open HTTP connection to %s", image_url);
+            esp_http_client_cleanup(client_img);
+            continue;
+        }
+
+        int img_len = esp_http_client_fetch_headers(client_img);
+        if (img_len <= 0) {
+            ESP_LOGE(TAG, "Failed to get content length for %s", image_url);
+            esp_http_client_close(client_img);
+            esp_http_client_cleanup(client_img);
+            continue;
+        }
+        
+        image_buffer = (uint8_t *)heap_caps_malloc(img_len, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        if (!image_buffer) {
+            ESP_LOGE(TAG, "Failed to allocate memory for image");
+            esp_http_client_close(client_img);
+            esp_http_client_cleanup(client_img);
+            continue;
+        }
+
+        esp_http_client_read_response(client_img, (char*)image_buffer, img_len);
+        esp_http_client_close(client_img);
+        esp_http_client_cleanup(client_img);
+
+// while ((entry = readdir(dir)) != NULL) {
+//     if (entry->d_type != DT_REG) continue; // Skip if not a regular file
+
+//     const char *fname = entry->d_name;
     
-    if (strncmp(fname, "._", 2) == 0 || fname[0] == '.') continue;
-    if (!(strstr(fname, ".JPG") || strstr(fname, ".jpg"))) continue; // Only JPGs
+//     if (strncmp(fname, "._", 2) == 0 || fname[0] == '.') continue;
+//     if (!(strstr(fname, ".JPG") || strstr(fname, ".jpg"))) continue; // Only JPGs
     
-    char image_path[272];
-    snprintf(image_path, sizeof(image_path), "/sdcard/%s", fname);
+//     char image_path[272];
+//     snprintf(image_path, sizeof(image_path), "/sdcard/%s", fname);
 
-    FILE *file = fopen(image_path, "rb");
-    if (!file) {
-        ESP_LOGE(TAG, "Failed to open image file: %s", strerror(errno));
-        continue;
-    }
-    fseek(file, 0, SEEK_END);
-    size_t file_size = ftell(file);
-    rewind(file);
-    uint8_t *image_buffer = (uint8_t *)heap_caps_malloc(file_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+//     FILE *file = fopen(image_path, "rb");
+//     if (!file) {
+//         ESP_LOGE(TAG, "Failed to open image file: %s", strerror(errno));
+//         continue;
+//     }
+//     fseek(file, 0, SEEK_END);
+//     size_t file_size = ftell(file);
+//     rewind(file);
+//     uint8_t *image_buffer = (uint8_t *)heap_caps_malloc(file_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 
-    if (!image_buffer) {
-        ESP_LOGE(TAG, "Failed to allocate memory for image");
-        fclose(file);
-        continue;
-    }
-    fread(image_buffer, 1, file_size, file);
-    fclose(file);
+//     if (!image_buffer) {
+//         ESP_LOGE(TAG, "Failed to allocate memory for image");
+//         fclose(file);
+//         continue;
+//     }
+//     fread(image_buffer, 1, file_size, file);
+//     fclose(file);
+
     dl::image::jpeg_img_t jpeg_img = {
         .data = image_buffer,
-        .data_len = file_size
+        .data_len = (size_t) img_len
     };
 
     // decode jpeg into image we can use
@@ -119,9 +246,9 @@ while ((entry = readdir(dir)) != NULL) {
         ESP_LOGE(TAG, "Failed to open output file: %s", strerror(errno));
     } else {
         if (best_results.empty() || best_results.size() == 0) {
-            fprintf(output_file, "Image: %s -> No pedestrian detected\n", image_path);
+            fprintf(output_file, "Image: %s -> No pedestrian detected\n", image_path.c_str());
         } else {
-            fprintf(output_file, "Image: %s -> %zu pedestrian(s) detected:\n", image_path, best_results.size());
+            fprintf(output_file, "Image: %s -> %zu pedestrian(s) detected:\n", image_path.c_str(), best_results.size());
             for (const auto &res : best_results) {
                 fprintf(output_file, "[score: %.2f, x1: %d, y1: %d, x2: %d, y2: %d]\n",
                         res.score,
@@ -141,7 +268,9 @@ while ((entry = readdir(dir)) != NULL) {
 }
 
 delete detect;  
-closedir(dir);
+ESP_ERROR_CHECK(bsp_sdcard_unmount());
+ESP_LOGI(TAG, "Processing complete. SD card unmounted.");
+// closedir(dir);
 
 #if CONFIG_PEDESTRIAN_DETECT_MODEL_IN_SDCARD
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
