@@ -176,3 +176,12 @@ Modify the printed x and y coordinates in the program to be relative to the orig
 N/A
 ### What I Accomplished
 I multiplied the original number by the crop_size variable divided by 240 in order to get the scale factor for the cropping. I then created a variable called crop_number to keep track of the crop performed (0 = center crop, 1 = left crop, 2 = right crop). From here, I used this variable to get to the right index in crop_areas (which is a two-dimensional vector). Each crop vector has four numbers: an x-offset, y-offset, width, and height. Depending on each coordinate, I either put index 0 (x-offset) or index 1 (y-offset). This value was added to the division before, and the entire equation multiplied by 2 as the original image was compressed by 1/2. 
+
+## Monday, June 30, 2025
+### Task
+Troubleshoot the printed x and y coordinates to ensure they were accurate to the original image.  
+### Notes
+N/A
+### What I Accomplished
+After reviewing the coordinate formulas with Ben, we realized there wass no need to multiply the original number by crop_size / 240, or multiply it all by 2. Upon further inspection, we noted that the vectors in crop_areas already included the original size and crop_size as part of the x- and y-offsets for each kind of crop. Thus, we only needed to add the corresponding entry in crop_areas to the original res.box value. In addition, using the data from the smaller dataset, I created a confusion matrix in Excel. The next steps I will take is using a larger dataset to get a more accurate depiction of how the model performs on images, including images with animals in them. 
+
