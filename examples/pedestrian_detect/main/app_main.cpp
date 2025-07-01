@@ -61,18 +61,13 @@ while ((entry = readdir(dir)) != NULL) {
     };
 
     // decode jpeg into image we can use
-    ESP_LOGI(TAG, "starting image decoding");
     ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888, 0, 2); // currently setting scale ratio to 2 (1/2 original image size)
-    ESP_LOGI(TAG, "image is decoded");
     ESP_LOGI(TAG, "Free SPIRAM after decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-    ESP_LOGI(TAG, "decoding done!");
 
-    ESP_LOGI(TAG, "going to run ped detect model");
     ESP_LOGI(TAG, "Free PSRAM before model: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 
     int crop_size = img.height;  // 768
-    // int crop_size = 240; // for cropping directly to 240x240
     std::vector<std::vector<int>> crop_areas = {
         { (img.width - crop_size) / 2, 0, crop_size, crop_size },   // Center crop
         { 0, 0, crop_size, crop_size },                             // Left crop
@@ -101,14 +96,6 @@ while ((entry = readdir(dir)) != NULL) {
         }
 
         dl::image::resize(img, cropped_img, dl::image::DL_IMAGE_INTERPOLATE_BILINEAR, 0, nullptr, area);
-        
-        // Manually copy the crop region into cropped_img
-        // const int channels = 3;
-        // for (int y = 0; y < 240; ++y) {
-        //     memcpy((uint8_t*)cropped_img.data + y * 240 * channels,
-        //     (uint8_t*)img.data + ((area[1] + y) * img.width + area[0]) * channels,
-        //     240 * channels);
-        // }
 
         // Run model
         std::list<dl::detect::result_t> results = detect->run(cropped_img);
@@ -127,9 +114,6 @@ while ((entry = readdir(dir)) != NULL) {
     }
 
     ESP_LOGI(TAG, "saving results");
-
-
-    ESP_LOGI(TAG, "model is going to run and write to the .txt file");
     FILE *output_file = fopen("/sdcard/detection_results.txt", "a"); // a = append
     if (!output_file) {
         ESP_LOGE(TAG, "Failed to open output file: %s", strerror(errno));
@@ -150,7 +134,6 @@ while ((entry = readdir(dir)) != NULL) {
         fprintf(output_file, "----\n"); // Separator between images
         fclose(output_file);
     }
-    ESP_LOGI(TAG, "model is done running");
 
     heap_caps_free(img.data);       
     heap_caps_free(image_buffer);
