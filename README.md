@@ -185,3 +185,11 @@ N/A
 ### What I Accomplished
 After reviewing the coordinate formulas with Ben, we realized there wass no need to multiply the original number by crop_size / 240, or multiply it all by 2. Upon further inspection, we noted that the vectors in crop_areas already included the original size and crop_size as part of the x- and y-offsets for each kind of crop. Thus, we only needed to add the corresponding entry in crop_areas to the original res.box value. In addition, using the data from the smaller dataset, I created a confusion matrix in Excel. The next steps I will take is using a larger dataset to get a more accurate depiction of how the model performs on images, including images with animals in them. 
 
+## Tuesday, July 1, 2025
+### Task
+Configure my existing program to download images from an HTTP server on my laptop rather than pulling from the SD card. 
+### Notes
+N/A
+### What I Accomplished
+After examining the larger dataset that Ben had provided for me, I realized that it was too large (~150 GB) to host on my SD card (32 GB). Through research, I determined that hosting an HTTP server locally and having the ESP32 download the images one by one to run the program on would be the simplest solution to this. I added code to my program to have the ESP32 connect to my local WiFi network and ensured that I opened the server from the command line in the image directory. From here, I used the command line to generate a text file with all the image names and saved it in the image directory. I ran into several errors while trying to test the code, and I was able to resolve some by adding the relevant dependent directories in main/CMakeLists.txt. However, I am continuously experiencing an error that the ESP32 wasn't able to find my laptop on my home WiFi. 
+
