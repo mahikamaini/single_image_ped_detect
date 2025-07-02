@@ -21,7 +21,7 @@
 #define URL http://192.168.15.31:8000/image_list.txt
 #define WIFI_SSID "maini-IoT"
 #define WIFI_PWD "18112000"
-#define SERVER_IP "192.168.15.31"
+#define SERVER_IP "192.168.15.5"
 #define SERVER_PORT "8000"
 
 const char *TAG = "pedestrian_detect";
@@ -62,13 +62,14 @@ static void wifi_init(void) {
 
 
 extern "C" void app_main(void) {
+
+wifi_init();
+
 uint8_t mac_addr[6] = {0};
     esp_wifi_get_mac(WIFI_IF_STA, mac_addr);
     ESP_LOGI(TAG, "ESP32 MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
              mac_addr[0], mac_addr[1], mac_addr[2],
              mac_addr[3], mac_addr[4], mac_addr[5]);
-
-wifi_init();
 
 std::vector<std::string> image_paths;
 std::string file_list_buffer;
