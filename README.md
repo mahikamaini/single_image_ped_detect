@@ -193,3 +193,10 @@ N/A
 ### What I Accomplished
 After examining the larger dataset that Ben had provided for me, I realized that it was too large (~150 GB) to host on my SD card (32 GB). Through research, I determined that hosting an HTTP server locally and having the ESP32 download the images one by one to run the program on would be the simplest solution to this. I added code to my program to have the ESP32 connect to my local WiFi network and ensured that I opened the server from the command line in the image directory. From here, I used the command line to generate a text file with all the image names and saved it in the image directory. I ran into several errors while trying to test the code, and I was able to resolve some by adding the relevant dependent directories in main/CMakeLists.txt. However, I am continuously experiencing an error that the ESP32 wasn't able to find my laptop on my home WiFi. 
 
+## Wednesday, July 2, 2025
+### Task
+Resolve the WiFi issue with the ESP32 and test the program. 
+### Notes
+N/A
+### What I Accomplished
+I realized my laptop was on a different WiFi network than the device, so I switched the network - however, the issue still persisted. I also ensured that no blocking was active on the network that would prevent the ESP32 from joining WiFi. After talking with Ben, I decided to test one of the STA WiFi examples provided by ESP-IDF. The device successfully ran this program and was able to connect to my WiFi, ruling out the possibility of a network issue. From here, I copied over the WiFi logic from the example program into my project and this resolved the WiFi issue. However, the program ran into an error that the resize resolution of the image wasn't a multiple of 8 as the original image sizes were bigger than the previous dataset. 
