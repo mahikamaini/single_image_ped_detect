@@ -13,7 +13,7 @@
 static const char *TAG = "dl_image_jpeg";
 namespace dl {
 namespace image {
-img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t caps, int scale_ratio)
+img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t caps)
 {
     assert(caps == 0 || caps == DL_IMAGE_CAP_RGB565_BIG_ENDIAN);
     img_t img;
@@ -61,14 +61,29 @@ img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t c
     jpeg_dec_close(jpeg_dec);  // close so we can reopen with scale
     ESP_LOGI(TAG, "Original JPEG resolution: %dx%d", out_info.width, out_info.height);
 
-    // pick a scale ratio
-    if (scale_ratio > 0) {
+    bool isScale = false;
+    for(int scale_ratio = 2; scale_ratio <= 8; scale_ratio++) {
         cfg.scale.width = out_info.width / scale_ratio;
         cfg.scale.height = out_info.height / scale_ratio;
-    } else {
-        cfg.scale.width = 0;
-        cfg.scale.height = 0;
+        if (cfg.scale.width % 8 == 0 && cfg.scale.height % 8 == 0) {
+            isScale = true;
+            break;
+        }
     }
+
+    if (!isScale) {
+        ESP_LOGE(TAG, "Could not find a valid scale for %dx%d", out_info.width, out_info.height);
+        return {}; // Exit if no valid scale was found
+    }
+
+    // // pick a scale ratio
+    // if (scale_ratio > 0) {
+    //     cfg.scale.width = out_info.width / scale_ratio;
+    //     cfg.scale.height = out_info.height / scale_ratio;
+    // } else {
+    //     cfg.scale.width = 0;
+    //     cfg.scale.height = 0;
+    // }
 
     // reopen with scale
     if (jpeg_dec_open(&cfg, &jpeg_dec) != JPEG_ERR_OK) {

@@ -17,7 +17,7 @@ namespace image {
  * DL_IMAGE_CAP_RGB565_BIG_ENDIAN to get a big endian image.
  * @return img_t
  */
-img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t caps = 0, int scale_ratio = 0);
+img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t caps = 0);
 
 /**
  * @brief Softawre jpeg encode.
