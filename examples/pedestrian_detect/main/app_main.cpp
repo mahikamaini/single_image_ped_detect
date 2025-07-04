@@ -14,6 +14,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_http_client.h"
+#include "dl_model_context.hpp"
 #include <vector>
 #include <string>
 #include <sstream>
@@ -178,6 +179,21 @@ ESP_LOGI(TAG, "SD card is mounted!");
 
 // struct dirent *entry;
 PedestrianDetect *detect = new PedestrianDetect();
+dl::image::img_t cropped_img;
+cropped_img.width = 240;
+cropped_img.height = 240;
+cropped_img.pix_type = dl::image::DL_IMAGE_PIX_TYPE_RGB888;
+cropped_img.data = heap_caps_malloc(240 * 240 * 3, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+if (!cropped_img.data) {
+    ESP_LOGE(TAG, "Failed to allocate memory for cropped_img.data in SPIRAM");
+    return;
+}
+
+FILE *output_file = fopen("/sdcard/detection_results.txt", "a"); // a = append
+if (!output_file) {
+    ESP_LOGE(TAG, "Failed to open output file: %s", strerror(errno));
+    return;
+}
 
 // 3. Loop through each image path, download, and process
     for (const auto& image_path : image_paths) {
@@ -257,12 +273,17 @@ PedestrianDetect *detect = new PedestrianDetect();
 
     // decode jpeg into image we can use
     ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-    auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888, 0, 5); // currently setting scale ratio to 2 (1/2 original image size)
+    auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888, 0);
+    if (!img.data) {
+        ESP_LOGE(TAG, "Failed to decode image, skipping.");
+        heap_caps_free(image_buffer); // Free the original JPEG buffer
+        continue;                     // Skip to the next image
+    }
     ESP_LOGI(TAG, "Free SPIRAM after decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 
     ESP_LOGI(TAG, "Free PSRAM before model: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
 
-    int crop_size = img.height;  // 768
+    int crop_size = img.height;  
     std::vector<std::vector<int>> crop_areas = {
         { (img.width - crop_size) / 2, 0, crop_size, crop_size },   // Center crop
         { 0, 0, crop_size, crop_size },                             // Left crop
@@ -277,19 +298,6 @@ PedestrianDetect *detect = new PedestrianDetect();
         const auto& area = crop_areas[i];
         ESP_LOGI(TAG, "Trying crop #%d at x=%d", (int)i + 1, area[0]);
 
-        dl::image::img_t cropped_img;
-        cropped_img.width = 240;
-        cropped_img.height = 240;
-        cropped_img.pix_type = dl::image::DL_IMAGE_PIX_TYPE_RGB888;
-        cropped_img.data = heap_caps_malloc(240 * 240 * 3, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-        if (!cropped_img.data) {
-            ESP_LOGE(TAG, "Failed to allocate memory for cropped_img.data in SPIRAM");
-            heap_caps_free(image_buffer);
-            heap_caps_free(img.data);
-            delete detect;
-            continue;
-        }
-
         dl::image::resize(img, cropped_img, dl::image::DL_IMAGE_INTERPOLATE_BILINEAR, 0, nullptr, area);
 
         // Run model
@@ -302,17 +310,13 @@ PedestrianDetect *detect = new PedestrianDetect();
             crop_number = (int) i;
         }
 
-        heap_caps_free(cropped_img.data);
+        detect->cleanup();
 
         // If confidence is high, no need to try other crops
         if (best_score >= 0.85) break;
     }
 
     ESP_LOGI(TAG, "saving results");
-    FILE *output_file = fopen("/sdcard/detection_results.txt", "a"); // a = append
-    if (!output_file) {
-        ESP_LOGE(TAG, "Failed to open output file: %s", strerror(errno));
-    } else {
         if (best_results.empty() || best_results.size() == 0) {
             fprintf(output_file, "Image: %s -> No pedestrian detected\n", image_path.c_str());
         } else {
@@ -327,14 +331,13 @@ PedestrianDetect *detect = new PedestrianDetect();
             }
         }
         fprintf(output_file, "----\n"); // Separator between images
-        fclose(output_file);
-    }
 
-    heap_caps_free(img.data);       
-    heap_caps_free(image_buffer);
+        heap_caps_free(img.data);       
+        heap_caps_free(image_buffer);
+    }  
 
-}
-
+fclose(output_file);
+heap_caps_free(cropped_img.data);
 delete detect;  
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
 ESP_LOGI(TAG, "Processing complete. SD card unmounted.");
