@@ -200,3 +200,11 @@ Resolve the WiFi issue with the ESP32 and test the program.
 N/A
 ### What I Accomplished
 I realized my laptop was on a different WiFi network than the device, so I switched the network - however, the issue still persisted. I also ensured that no blocking was active on the network that would prevent the ESP32 from joining WiFi. After talking with Ben, I decided to test one of the STA WiFi examples provided by ESP-IDF. The device successfully ran this program and was able to connect to my WiFi, ruling out the possibility of a network issue. From here, I copied over the WiFi logic from the example program into my project and this resolved the WiFi issue. However, the program ran into an error that the resize resolution of the image wasn't a multiple of 8 as the original image sizes were bigger than the previous dataset. 
+
+## Thursday, July 3, 2025
+### Task
+Solve the resize resolution issue and test program images. 
+### Notes
+Because these new images are larger than the previous dataset, we need to ensure their dimensions are divisible by 8 for the program to run. 
+### What I Accomplished
+I modified the resize() function to remove the scale factor parameter, and instead, added a loop in the code that cycled through scale factors from 2 to 8 until the dimensions of the image were divisible by 8. After making this change, the program ran fairly smoothly - however, at certain images, there seemed to be a memory leak and the image was unable to be processed. After some research, I decided a cleanup function may help with this issue; however, I am still working on implementing it. It seems these trouble images are ones that have animals in them, and the model detects them as humans. 
