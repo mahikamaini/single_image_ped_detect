@@ -205,6 +205,8 @@ if (!output_file) {
         }
         snprintf(image_url, sizeof(image_url), "http://%s:%s/%s", SERVER_IP, SERVER_PORT, path_to_use);
         ESP_LOGI(TAG, "Processing image: %s", image_url);
+
+        ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
         
         uint8_t *image_buffer = nullptr;
         
@@ -272,7 +274,6 @@ if (!output_file) {
     };
 
     // decode jpeg into image we can use
-    ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
     auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888, 0);
     if (!img.data) {
         ESP_LOGE(TAG, "Failed to decode image, skipping.");
@@ -310,12 +311,12 @@ if (!output_file) {
             crop_number = (int) i;
         }
 
-        detect->cleanup();
+        // detect->cleanup();
 
         // If confidence is high, no need to try other crops
         if (best_score >= 0.85) break;
     }
-
+    // what if image is too large?
     ESP_LOGI(TAG, "saving results");
         if (best_results.empty() || best_results.size() == 0) {
             fprintf(output_file, "Image: %s -> No pedestrian detected\n", image_path.c_str());

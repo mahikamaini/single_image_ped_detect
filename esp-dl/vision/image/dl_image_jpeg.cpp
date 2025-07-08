@@ -67,6 +67,7 @@ img_t sw_decode_jpeg(const jpeg_img_t &jpeg_img, pix_type_t pix_type, uint32_t c
         cfg.scale.height = out_info.height / scale_ratio;
         if (cfg.scale.width % 8 == 0 && cfg.scale.height % 8 == 0) {
             isScale = true;
+            ESP_LOGI(TAG, "JPEG scaled by %d", scale_ratio);
             break;
         }
     }

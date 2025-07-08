@@ -53,7 +53,7 @@ PedestrianDetect::PedestrianDetect(model_type_t model_type)
     }
 }
 
-void PedestrianDetect::cleanup()
-{
-    this->m_model->get_context()->root_free(); // check dl_detect_base.hpp for similar function
-}
+// void PedestrianDetect::cleanup()
+// {
+//     this->m_model->get_context()->root_free(); // check dl_detect_base.hpp for similar function
+// }
