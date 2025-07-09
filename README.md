@@ -216,3 +216,11 @@ Identify the runtime errors in the program and resolve them.
 N/A
 ### What I Accomplished
 After examining the logs during runtime, I concluded there were two types of errors: a memory allocation error and output buffer allocation error. The memory allocation error occured when the image file was too large (> 2.5 MB); however, the output buffer allocation error was strange and I was unsure of its cause. During our meeting, Ben and I moved the statement printing the amount of available SPIRAM earlier in the code to track memory fragmentation as a possible cause. However, neither of these errors directly resulted in this. As the program continued to run, though, I observed the available SPIRAM decreasing over time, which Ben suggested indicated an issue with downloading the images over the local server. My next steps with this will be to debug this process and seeing how it affects these errors. 
+
+## Tuesday, July 8, 2025
+### Task
+Debug SPIRAM fragmentation issues.
+### Notes
+N/A
+### What I Accomplished
+As per research, I tried allocating a fixed-size buffer of 2.5 MB instead of a dynamic buffer for each image - however, this did not resolve the issue and instead led to more images not being processed. For memory efficiency purposes, I also tried incorporating an approach that directly cropped to 240x240 pixels without affecting the placement of objects in the image, but this caused runtime errors, as well. After searching through the menuconfig settings, I found a setting to "Free dynamic buffers during WiFi enterprise connection". I enabled this and noticed that while the initial available SPIRAM (~3.5 MB) persisted for longer, one image in the middle of processing caused this number to drop to ~ 2.4 MB. 
