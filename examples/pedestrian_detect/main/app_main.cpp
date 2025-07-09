@@ -28,7 +28,6 @@
 #define ESP_WIFI_SAE_MODE "BOTH"
 #define EXAMPLE_H2E_IDENTIFIER "H2E"
 
-
 const char *TAG = "pedestrian_detect";
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -189,12 +188,7 @@ if (!cropped_img.data) {
     return;
 }
 
-FILE *output_file = fopen("/sdcard/detection_results.txt", "a"); // a = append
-if (!output_file) {
-    ESP_LOGE(TAG, "Failed to open output file: %s", strerror(errno));
-    return;
-}
-
+int img_count = 0;
 // 3. Loop through each image path, download, and process
     for (const auto& image_path : image_paths) {
         char image_url[272];
@@ -318,6 +312,11 @@ if (!output_file) {
     }
     // what if image is too large?
     ESP_LOGI(TAG, "saving results");
+    FILE *output_file = fopen("/sdcard/detection_results.txt", "a"); // a = append
+    if (!output_file) {
+        ESP_LOGE(TAG, "Failed to open output file: %s", strerror(errno));
+        return;
+    }   
         if (best_results.empty() || best_results.size() == 0) {
             fprintf(output_file, "Image: %s -> No pedestrian detected\n", image_path.c_str());
         } else {
@@ -332,12 +331,14 @@ if (!output_file) {
             }
         }
         fprintf(output_file, "----\n"); // Separator between images
+        fclose(output_file);
+        img_count++;
+        ESP_LOGE(TAG, "Image %d of %d processed", img_count, image_paths.size());
 
         heap_caps_free(img.data);       
         heap_caps_free(image_buffer);
     }  
 
-fclose(output_file);
 heap_caps_free(cropped_img.data);
 delete detect;  
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
