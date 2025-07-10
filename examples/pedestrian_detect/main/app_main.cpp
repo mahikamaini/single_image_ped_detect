@@ -220,10 +220,6 @@ int img_count = 0;
 // 3. Loop through each image path, download, and process
     for (int i = start_index; i < image_paths.size(); i++) {
         const auto& image_path = image_paths[i];
-        if (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) < MIN_FREE_SPIRAM) {
-        ESP_LOGE(TAG, "Memory low (%d bytes). Restarting to prevent crash.", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-        esp_restart();
-    }
         char image_url[272];
         // The find command on Mac/Linux prefixes with './', let's handle that
         const char* path_to_use = image_path.c_str();
@@ -232,8 +228,6 @@ int img_count = 0;
         }
         snprintf(image_url, sizeof(image_url), "http://%s:%s/%s", SERVER_IP, SERVER_PORT, path_to_use);
         ESP_LOGI(TAG, "Processing image: %s", image_url);
-
-        ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
         
         uint8_t *image_buffer = nullptr;
         
@@ -253,6 +247,12 @@ int img_count = 0;
             esp_http_client_cleanup(client_img);
             continue;
         }
+
+         ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+        if (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) < MIN_FREE_SPIRAM) {
+        ESP_LOGE(TAG, "Memory low (%d bytes). Restarting to prevent crash.", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+        esp_restart();
+    }
         
         image_buffer = (uint8_t *)heap_caps_malloc(img_len, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         if (!image_buffer) {
@@ -344,7 +344,7 @@ int img_count = 0;
         // If confidence is high, no need to try other crops
         if (best_score >= 0.85) break;
     }
-    // what if image is too large?
+    
     ESP_LOGI(TAG, "saving results");
     FILE *output_file = fopen("/sdcard/detection_results.txt", "a"); // a = append
     if (!output_file) {
