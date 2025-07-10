@@ -302,6 +302,7 @@ int img_count = 0;
 
     // decode jpeg into image we can use
     auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888, 0);
+    ESP_LOGI(TAG, "Image %d of %zu processing.", i + 1, image_paths.size());
     if (!img.data) {
         ESP_LOGE(TAG, "Failed to decode image, skipping.");
         heap_caps_free(image_buffer); // Free the original JPEG buffer
@@ -365,7 +366,6 @@ int img_count = 0;
         }
         fprintf(output_file, "----\n"); // Separator between images
         fclose(output_file);
-        ESP_LOGI(TAG, "Image %d of %zu processed. Saving progress.", i + 1, image_paths.size());
     err = nvs_set_i32(nvs_handle, "img_idx", i + 1); // Save the NEXT index
     err = nvs_commit(nvs_handle);
     if (err != ESP_OK) {
