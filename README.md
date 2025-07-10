@@ -224,3 +224,11 @@ Debug SPIRAM fragmentation issues.
 N/A
 ### What I Accomplished
 As per research, I tried allocating a fixed-size buffer of 2.5 MB instead of a dynamic buffer for each image - however, this did not resolve the issue and instead led to more images not being processed. For memory efficiency purposes, I also tried incorporating an approach that directly cropped to 240x240 pixels without affecting the placement of objects in the image, but this caused runtime errors, as well. After searching through the menuconfig settings, I found a setting to "Free dynamic buffers during WiFi enterprise connection". I enabled this and noticed that while the initial available SPIRAM (~3.5 MB) persisted for longer, one image in the middle of processing caused this number to drop to ~ 2.4 MB. 
+
+## Wednesday, July 9, 2025
+### Task
+Continue to debug SPIRAM fragmentation and produce .txt file of images. 
+### Notes
+N/A
+### What I Accomplished
+I tried decoding the image to grayscale to save on memory, then converting it to RGB888; however, since the Pedestrian Detect model does not take grayscale as a valid image format, this approach was unsuccessful. I defined a variable called MIN_FREE_SPIRAM to be ~ 2.5 MB and added a check that restarted the ESP32 if the amount of available SPIRAM dropped below this threshold. Finally, in order to save the last image index reached, I configured Non-Volatile Storage (NVS) - a built-in ESP32 library. This way, even when the device is disconnected or restarted, the program will continue from the saved index instead of from the beginning. 

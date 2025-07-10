@@ -20,7 +20,8 @@
 #include <sstream>
 #include <inttypes.h>
 
-#define WIFI_SSID "maini-IoT"
+
+#define WIFI_SSID "maini-IoT" 
 #define WIFI_PWD "18112000"
 #define SERVER_IP "192.168.15.5"
 #define SERVER_PORT "8000"
@@ -339,8 +340,6 @@ int img_count = 0;
             crop_number = (int) i;
         }
 
-        // detect->cleanup();
-
         // If confidence is high, no need to try other crops
         if (best_score >= 0.85) break;
     }
@@ -372,7 +371,6 @@ int img_count = 0;
     ESP_LOGE(TAG, "Failed to commit NVS changes!");
     }
         img_count++;
-        // ESP_LOGE(TAG, "Image %d of %zu processed", img_count, image_paths.size());
 
         heap_caps_free(img.data);       
         heap_caps_free(image_buffer);
