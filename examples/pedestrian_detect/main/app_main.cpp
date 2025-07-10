@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <inttypes.h>
 
 #define WIFI_SSID "maini-IoT"
 #define WIFI_PWD "18112000"
@@ -37,6 +38,8 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_FAIL_BIT      BIT1
 
 static int s_retry_num = 0;
+
+#define MIN_FREE_SPIRAM 2621440 
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -132,6 +135,31 @@ extern "C" void app_main(void) {
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
 
+
+// NVS handle
+nvs_handle_t nvs_handle;
+esp_err_t err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
+// nvs_erase_key(nvs_handle, "img_idx"); // run to start over from beginning
+if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
+}
+
+// Read the last processed image index
+int32_t start_index = 0; // Default to 0
+err = nvs_get_i32(nvs_handle, "img_idx", &start_index);
+switch (err) {
+    case ESP_OK:
+        ESP_LOGI(TAG, "Resuming from image index %" PRId32, start_index);
+        break;
+    case ESP_ERR_NVS_NOT_FOUND:
+        ESP_LOGI(TAG, "First run, starting from index 0");
+        break;
+    default :
+        ESP_LOGE(TAG, "Error reading NVS: %s", esp_err_to_name(err));
+}
+
+// The image list is downloaded here...
+
 uint8_t mac_addr[6] = {0};
     esp_wifi_get_mac(WIFI_IF_STA, mac_addr);
     ESP_LOGI(TAG, "ESP32 MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
@@ -165,7 +193,7 @@ while (std::getline(ss, line)) {
     }
 }
 
-ESP_LOGI(TAG, "Successfully downloaded and parsed image list. Found %d images.", image_paths.size());
+ESP_LOGI(TAG, "Successfully downloaded and parsed image list. Found %zu images.", image_paths.size());
 
 ESP_ERROR_CHECK(bsp_sdcard_mount());
 ESP_LOGI(TAG, "SD card is mounted!");
@@ -190,7 +218,12 @@ if (!cropped_img.data) {
 
 int img_count = 0;
 // 3. Loop through each image path, download, and process
-    for (const auto& image_path : image_paths) {
+    for (int i = start_index; i < image_paths.size(); i++) {
+        const auto& image_path = image_paths[i];
+        if (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) < MIN_FREE_SPIRAM) {
+        ESP_LOGE(TAG, "Memory low (%d bytes). Restarting to prevent crash.", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+        esp_restart();
+    }
         char image_url[272];
         // The find command on Mac/Linux prefixes with './', let's handle that
         const char* path_to_use = image_path.c_str();
@@ -332,14 +365,21 @@ int img_count = 0;
         }
         fprintf(output_file, "----\n"); // Separator between images
         fclose(output_file);
+        ESP_LOGI(TAG, "Image %d of %zu processed. Saving progress.", i + 1, image_paths.size());
+    err = nvs_set_i32(nvs_handle, "img_idx", i + 1); // Save the NEXT index
+    err = nvs_commit(nvs_handle);
+    if (err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to commit NVS changes!");
+    }
         img_count++;
-        ESP_LOGE(TAG, "Image %d of %d processed", img_count, image_paths.size());
+        // ESP_LOGE(TAG, "Image %d of %zu processed", img_count, image_paths.size());
 
         heap_caps_free(img.data);       
         heap_caps_free(image_buffer);
     }  
 
 heap_caps_free(cropped_img.data);
+nvs_close(nvs_handle);
 delete detect;  
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
 ESP_LOGI(TAG, "Processing complete. SD card unmounted.");
