@@ -232,3 +232,11 @@ Continue to debug SPIRAM fragmentation and produce .txt file of images.
 N/A
 ### What I Accomplished
 I tried decoding the image to grayscale to save on memory, then converting it to RGB888; however, since the Pedestrian Detect model does not take grayscale as a valid image format, this approach was unsuccessful. I defined a variable called MIN_FREE_SPIRAM to be ~ 2.5 MB and added a check that restarted the ESP32 if the amount of available SPIRAM dropped below this threshold. Finally, in order to save the last image index reached, I configured Non-Volatile Storage (NVS) - a built-in ESP32 library. This way, even when the device is disconnected or restarted, the program will continue from the saved index instead of from the beginning. 
+
+## Thursday, July 10, 2025
+### Task
+Monitor program while it processes the 7000 images in the dataset. 
+### Notes
+N/A
+### What I Accomplished
+I noticed that the amount of available SPIRAM did slowly decrease, although the ESP32 only restarted about once or twice in total. However, the program crashes near the 6900th image because of an invalid image URL, then restarts from a different last known index - an extremely odd error. From here, I will put in a check for this error and finish running all the images in the dataset, before moving on to the camera phase of the project. 
