@@ -237,6 +237,7 @@ int img_count = 0;
 
         if (esp_http_client_open(client_img, 0) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to open HTTP connection to %s", image_url);
+            esp_http_client_close(client_img);
             esp_http_client_cleanup(client_img);
             continue;
         }
