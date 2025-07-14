@@ -223,13 +223,21 @@ int img_count = 0;
         const auto& image_path = image_paths[i];
         char image_url[272];
         // The find command on Mac/Linux prefixes with './', let's handle that
+
+         if (image_path.find(" ") != std::string::npos ||
+        image_path.find("(") != std::string::npos ||
+        image_path.find(")") != std::string::npos) {
+        ESP_LOGW(TAG, "Skipping image due to invalid characters: %s", image_path.c_str());
+        continue;
+        }
+
         const char* path_to_use = image_path.c_str();
         if (strncmp(path_to_use, "./", 2) == 0) {
             path_to_use += 2;
         }
         snprintf(image_url, sizeof(image_url), "http://%s:%s/%s", SERVER_IP, SERVER_PORT, path_to_use);
         ESP_LOGI(TAG, "Processing image: %s", image_url);
-        
+
         uint8_t *image_buffer = nullptr;
         
         esp_http_client_config_t config_img = { .url = image_url, .timeout_ms = 15000 };
