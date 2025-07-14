@@ -240,3 +240,11 @@ Monitor program while it processes the 7000 images in the dataset.
 N/A
 ### What I Accomplished
 I noticed that the amount of available SPIRAM did slowly decrease, although the ESP32 only restarted about once or twice in total. However, the program crashes near the 6900th image because of an invalid image URL, then restarts from a different last known index - an extremely odd error. From here, I will put in a check for this error and finish running all the images in the dataset, before moving on to the camera phase of the project. 
+
+## Friday, July 11, 2025
+### Task
+Complete post-processing of image dataset and make confusion matrix in Excel. 
+### Notes
+N/A
+### What I Accomplished
+After all 7000 images were finished being processed, I imported the resulting .txt file into my project. I needed to generate a .csv file from the .txt file like I did last time; however, since there were many more subfolders in this dataset, it was necessary for me to modify compare_results.py to accomplish this. Instead of a positive and negative folder, I created a new variable (image_list_file) that held the path to a .txt file containing all the image paths in the dataset. I then defined an array of positive folders with "dan" and "dan_and_dog" to signify to the program which folders contained images with pedestrians. My match function didn't change much, but I modified the parameters to take the .txt file with the results and the image list file instead so that images with the same name would be categorized based on their full image path. After this, I changed the open() function to obtain the parent folder of each image path and check whether the parent had the same name as the names in the positive folder. Finally, I was able to obtain a .csv file with this data and import it into Excel, where I am currently finishing up a confusion matrix. 
