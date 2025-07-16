@@ -1,11 +1,12 @@
 #include "who_camera.h"
 #include "who_human_face_detection.hpp"
 #include "who_lcd.h"
+#include "camera_capture.hpp"
 
 static QueueHandle_t xQueueAIFrame = NULL;
 static QueueHandle_t xQueueLCDFrame = NULL;
 
-extern "C" void app_main()
+extern "C" void start_camera_capture()
 {
     xQueueAIFrame = xQueueCreate(2, sizeof(camera_fb_t *));
     xQueueLCDFrame = xQueueCreate(2, sizeof(camera_fb_t *));

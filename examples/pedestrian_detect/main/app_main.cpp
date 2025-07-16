@@ -10,6 +10,7 @@
 #include "dl_image_define.hpp"
 #include "dl_image_jpeg.hpp"
 #include "dl_image_process.hpp"
+#include "camera_capture.hpp"
 #include "nvs_flash.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -19,7 +20,6 @@
 #include <string>
 #include <sstream>
 #include <inttypes.h>
-
 
 #define WIFI_SSID "maini-IoT" 
 #define WIFI_PWD "18112000"
@@ -124,6 +124,8 @@ void wifi_init_sta(void)
 
 
 extern "C" void app_main(void) {
+
+    start_camera_capture();
 
   //Initialize NVS
     esp_err_t ret = nvs_flash_init();
