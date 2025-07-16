@@ -256,3 +256,11 @@ Finish creating confusion matrix and begin work on camera capture component.
 Out of all images processed, the model obtained a 94.5% detection accuracy - an increase from the 88% accuracy from the previous dataset. 
 ### What I Accomplished
 Using Excel, I was able to complete the confusion matrix for this dataset. Later on, I integrated this confusion matrix along with the previous one into a .md file in the project called confusion-matrices.md. During our weekly meeting, Ben reiterated the next steps - to press a button on the ESP32 and take a picture, then save that image onto the SD card. I decided that the original pedestrian-detect code that utilized the camera would be a good starting point for this next part. I compiled this code to test its functionality; however, I ran into several errors regarding CMake and finding directories. I downloaded the esp-who folder into my project as this file required those components, and updated their relevant paths in the CMakeLists file. After this, though, the esp-who library depended on an older version of ESP-IDF, causing compilation errors as my environment version is 5.4.1. My next steps will be to continue to troubleshoot and hopefully get the sample program running. 
+
+## Tuesday, July 15, 2025
+### Task
+Resolve version errors and run the sample program. 
+### Notes
+N/A 
+### What I Accomplished
+To resolve the version errors, I needed to redownload ESP-WHO with version 1.1.0. After this, I needed to change the paths listed in CMakeLists to reflect the new file structure. However, I continued to get compilation errors because the code in the original pedestrian-detect file depended on the older version of ESP-WHO, which was not compatible with my version of ESP-IDF. After looking through the examples in the esp-who folder, I found examples of human-face-detection and human-face-recognition, which I decided to go off of instead. I was able to compile and flash both files after some version control issues were resolved; however, there was a runtime error of the files trying to use two I2C drivers at the same time. I was able to modify the sdkconfig file to use the legacy I2C driver instead of the new I2C driver, which resolved the issue. My next steps now will be to modify this code to be able to press and button and take a picture to save to the SD card. 
