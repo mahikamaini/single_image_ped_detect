@@ -10,7 +10,8 @@
 #include "dl_image_define.hpp"
 #include "dl_image_jpeg.hpp"
 #include "dl_image_process.hpp"
-#include "camera_capture.hpp"
+#include "who_camera.h"
+#include "who_lcd.h"
 #include "nvs_flash.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -21,193 +22,266 @@
 #include <sstream>
 #include <inttypes.h>
 
-#define WIFI_SSID "maini-IoT" 
-#define WIFI_PWD "18112000"
-#define SERVER_IP "192.168.15.5"
-#define SERVER_PORT "8000"
-#define EXAMPLE_ESP_MAXIMUM_RETRY 5
-#define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD "WPA2 PSK"
-#define ESP_WIFI_SAE_MODE "BOTH"
-#define EXAMPLE_H2E_IDENTIFIER "H2E"
+#define ADC_PIN IO1 // The pin that buttons are connected to
+#define MENU_BUTTON_VOLTAGE 2.41f  // Voltage for MENU button
+#define ADC_THRESHOLD 0.05f        // Voltage tolerance range
+
+// #define WIFI_SSID "maini-IoT" 
+// #define WIFI_PWD "18112000"
+// #define SERVER_IP "192.168.15.5"
+// #define SERVER_PORT "8000"
+// #define EXAMPLE_ESP_MAXIMUM_RETRY 5
+// #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD "WPA2 PSK"
+// #define ESP_WIFI_SAE_MODE "BOTH"
+// #define EXAMPLE_H2E_IDENTIFIER "H2E"
 
 const char *TAG = "pedestrian_detect";
 
 /* FreeRTOS event group to signal when we are connected*/
-static EventGroupHandle_t s_wifi_event_group;
+// static EventGroupHandle_t s_wifi_event_group;
 
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT      BIT1
+// #define WIFI_CONNECTED_BIT BIT0
+// #define WIFI_FAIL_BIT      BIT1
 
-static int s_retry_num = 0;
+// static int s_retry_num = 0;
 
 #define MIN_FREE_SPIRAM 2621440 
 
-static void event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+// static void event_handler(void* arg, esp_event_base_t event_base,
+//                                 int32_t event_id, void* event_data)
+// {
+//     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+//         esp_wifi_connect();
+//     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+//         if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
+//             esp_wifi_connect();
+//             s_retry_num++;
+//             ESP_LOGI(TAG, "retry to connect to the AP");
+//         } else {
+//             xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+//         }
+//         ESP_LOGI(TAG,"connect to the AP fail");
+//     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+//         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+//         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+//         s_retry_num = 0;
+//         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+//     }
+// }
+
+// void wifi_init_sta(void)
+// {
+//     s_wifi_event_group = xEventGroupCreate();
+
+//     ESP_ERROR_CHECK(esp_netif_init());
+
+//     ESP_ERROR_CHECK(esp_event_loop_create_default());
+//     esp_netif_create_default_wifi_sta();
+
+//     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+//     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+//     esp_event_handler_instance_t instance_any_id;
+//     esp_event_handler_instance_t instance_got_ip;
+//     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+//                                                         ESP_EVENT_ANY_ID,
+//                                                         &event_handler,
+//                                                         NULL,
+//                                                         &instance_any_id));
+//     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+//                                                         IP_EVENT_STA_GOT_IP,
+//                                                         &event_handler,
+//                                                         NULL,
+//                                                         &instance_got_ip));
+
+//     wifi_config_t wifi_config = {
+//         .sta = {
+//             .ssid = WIFI_SSID,
+//             .password = WIFI_PWD
+//         },
+//     };
+//     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+//     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+//     ESP_ERROR_CHECK(esp_wifi_start() );
+
+//     ESP_LOGI(TAG, "wifi_init_sta finished.");
+
+//     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
+//      * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
+//     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+//             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+//             pdFALSE,
+//             pdFALSE,
+//             portMAX_DELAY);
+
+//     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
+//      * happened. */
+//     if (bits & WIFI_CONNECTED_BIT) {
+//         ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
+//                  WIFI_SSID, WIFI_PWD);
+//     } else if (bits & WIFI_FAIL_BIT) {
+//         ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
+//                  WIFI_SSID, WIFI_PWD);
+//     } else {
+//         ESP_LOGE(TAG, "UNEXPECTED EVENT");
+//     }
+// }
+
+float read_adc_voltage()
 {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
-        } else {
-            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+    // Read the raw ADC value (0-4095)
+    int adc_value = adc1_get_raw(ADC1_CHANNEL_0);
+    // Convert ADC value to voltage (0 to 3.3V)
+    float voltage = (adc_value / 4095.0) * 3.3;
+    return voltage;
+}
+bool is_menu_button_pressed()
+{
+    // Read the ADC value and convert to voltage
+    float voltage = read_adc_voltage();
+    // Print ADC value and voltage for debugging
+    printf("ADC Value: %d, Voltage: %.2fV\n", adc_value, voltage);
+    // Check if the voltage is close to the "MENU" button voltage
+    if (voltage >= (MENU_BUTTON_VOLTAGE - ADC_THRESHOLD) && voltage <= (MENU_BUTTON_VOLTAGE + ADC_THRESHOLD))
+    {
+        return true;  // MENU button pressed
+    }
+    return false;  // MENU button not pressed
+}
+
+static void button_capture(void *arg) {
+    while (true) {
+        if (is_menu_button_pressed()) {
+            ESP_LOGE(TAG, "Menu button pressed!");
+            vTaskDelay(pdMS_TO_TICKS(200));
+            // click and save photo
         }
-        ESP_LOGI(TAG,"connect to the AP fail");
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-        s_retry_num = 0;
-        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    }
-}
+              // 1. Get a frame from the camera
+            camera_fb_t *fb = esp_camera_fb_get();
+            if (!fb) {
+                ESP_LOGE(TAG, "Camera capture failed");
+                continue; // Skip this attempt
+            }
 
-void wifi_init_sta(void)
-{
-    s_wifi_event_group = xEventGroupCreate();
+            // 2. Convert the frame to JPEG format
+            uint8_t *jpg_buf = NULL;
+            size_t jpg_len = 0;
+            bool converted = fmt2jpg(fb->buf, fb->len, fb->width, fb->height, fb->format, 80, &jpg_buf, &jpg_len);
+            
+            // Return the original frame buffer IMMEDIATELY after conversion
+            esp_camera_fb_return(fb);
 
-    ESP_ERROR_CHECK(esp_netif_init());
+            if (!converted) {
+                ESP_LOGE(TAG, "JPEG conversion failed");
+                continue;
+            }
 
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_sta();
+            // 3. Create a unique filename and save the JPEG to the SD card
+            char path[32];
+            sprintf(path, "/sdcard/capture_%llu.jpg", esp_timer_get_time());
 
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+            FILE *f = fopen(path, "w");
+            if (f == NULL) {
+                ESP_LOGE(TAG, "Failed to open file for writing");
+            } else {
+                fwrite(jpg_buf, 1, jpg_len, f);
+                ESP_LOGI(TAG, "Saved photo to: %s", path);
+                fclose(f);
+            }
 
-    esp_event_handler_instance_t instance_any_id;
-    esp_event_handler_instance_t instance_got_ip;
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        ESP_EVENT_ANY_ID,
-                                                        &event_handler,
-                                                        NULL,
-                                                        &instance_any_id));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-                                                        IP_EVENT_STA_GOT_IP,
-                                                        &event_handler,
-                                                        NULL,
-                                                        &instance_got_ip));
-
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PWD
-        },
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
-    ESP_ERROR_CHECK(esp_wifi_start() );
-
-    ESP_LOGI(TAG, "wifi_init_sta finished.");
-
-    /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
-     * number of re-tries (WIFI_FAIL_BIT). The bits are set by event_handler() (see above) */
-    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-            pdFALSE,
-            pdFALSE,
-            portMAX_DELAY);
-
-    /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
-     * happened. */
-    if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
-                 WIFI_SSID, WIFI_PWD);
-    } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
-                 WIFI_SSID, WIFI_PWD);
-    } else {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
-    }
-}
-
+            // 4. Free the JPEG buffer's memory
+            free(jpg_buf);
+        }
+        vTaskDelay(pdMS_TO_TICKS(20)); // Poll every 20ms
+}  
 
 extern "C" void app_main(void) {
 
-    start_camera_capture();
+   camera_capture();
 
-  //Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_ERROR_CHECK(nvs_flash_erase());
-      ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
+//   //Initialize NVS
+//     esp_err_t ret = nvs_flash_init();
+//     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+//       ESP_ERROR_CHECK(nvs_flash_erase());
+//       ret = nvs_flash_init();
+//     }
+//     ESP_ERROR_CHECK(ret);
 
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-    wifi_init_sta();
+//     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+//     wifi_init_sta();
 
 
-// NVS handle
-nvs_handle_t nvs_handle;
-esp_err_t err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
-// nvs_erase_key(nvs_handle, "img_idx"); // run to start over from beginning
-if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
-}
+// // NVS handle
+// nvs_handle_t nvs_handle;
+// esp_err_t err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
+// // nvs_erase_key(nvs_handle, "img_idx"); // run to start over from beginning
+// if (err != ESP_OK) {
+//     ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
+// }
 
-// Read the last processed image index
-int32_t start_index = 0; // Default to 0
-err = nvs_get_i32(nvs_handle, "img_idx", &start_index);
-switch (err) {
-    case ESP_OK:
-        ESP_LOGI(TAG, "Resuming from image index %" PRId32, start_index);
-        break;
-    case ESP_ERR_NVS_NOT_FOUND:
-        ESP_LOGI(TAG, "First run, starting from index 0");
-        break;
-    default :
-        ESP_LOGE(TAG, "Error reading NVS: %s", esp_err_to_name(err));
-}
+// // Read the last processed image index
+// int32_t start_index = 0; // Default to 0
+// err = nvs_get_i32(nvs_handle, "img_idx", &start_index);
+// switch (err) {
+//     case ESP_OK:
+//         ESP_LOGI(TAG, "Resuming from image index %" PRId32, start_index);
+//         break;
+//     case ESP_ERR_NVS_NOT_FOUND:
+//         ESP_LOGI(TAG, "First run, starting from index 0");
+//         break;
+//     default :
+//         ESP_LOGE(TAG, "Error reading NVS: %s", esp_err_to_name(err));
+// }
 
 // The image list is downloaded here...
 
-uint8_t mac_addr[6] = {0};
-    esp_wifi_get_mac(WIFI_IF_STA, mac_addr);
-    ESP_LOGI(TAG, "ESP32 MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
-             mac_addr[0], mac_addr[1], mac_addr[2],
-             mac_addr[3], mac_addr[4], mac_addr[5]);
+// uint8_t mac_addr[6] = {0};
+//     esp_wifi_get_mac(WIFI_IF_STA, mac_addr);
+//     ESP_LOGI(TAG, "ESP32 MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
+//              mac_addr[0], mac_addr[1], mac_addr[2],
+//              mac_addr[3], mac_addr[4], mac_addr[5]);
 
-std::vector<std::string> image_paths;
-std::string file_list_buffer;
+// std::vector<std::string> image_paths;
+// std::string file_list_buffer;
 
-char list_url[100];
-snprintf(list_url, sizeof(list_url), "http://%s:%s/image_list.txt", SERVER_IP, SERVER_PORT);
+// char list_url[100];
+// snprintf(list_url, sizeof(list_url), "http://%s:%s/image_list.txt", SERVER_IP, SERVER_PORT);
 
-esp_http_client_config_t config_list = { .url = list_url };
-esp_http_client_handle_t client_list = esp_http_client_init(&config_list);
-esp_http_client_open(client_list, 0);
-int content_length = esp_http_client_fetch_headers(client_list);
-file_list_buffer.resize(content_length);
-esp_http_client_read(client_list, &file_list_buffer[0], content_length);
-esp_http_client_close(client_list);
-esp_http_client_cleanup(client_list);
+// esp_http_client_config_t config_list = { .url = list_url };
+// esp_http_client_handle_t client_list = esp_http_client_init(&config_list);
+// esp_http_client_open(client_list, 0);
+// int content_length = esp_http_client_fetch_headers(client_list);
+// file_list_buffer.resize(content_length);
+// esp_http_client_read(client_list, &file_list_buffer[0], content_length);
+// esp_http_client_close(client_list);
+// esp_http_client_cleanup(client_list);
 
-std::stringstream ss(file_list_buffer);
-std::string line;
+// std::stringstream ss(file_list_buffer);
+// std::string line;
 
-while (std::getline(ss, line)) {
-    if (line.length() > 1) {
-       if (line.back() == '\r') {
-        line.pop_back();
-       }
-       image_paths.push_back(line); 
-    }
-}
+// while (std::getline(ss, line)) {
+//     if (line.length() > 1) {
+//        if (line.back() == '\r') {
+//         line.pop_back();
+//        }
+//        image_paths.push_back(line); 
+//     }
+// }
 
-ESP_LOGI(TAG, "Successfully downloaded and parsed image list. Found %zu images.", image_paths.size());
+// ESP_LOGI(TAG, "Successfully downloaded and parsed image list. Found %zu images.", image_paths.size());
 
 ESP_ERROR_CHECK(bsp_sdcard_mount());
 ESP_LOGI(TAG, "SD card is mounted!");
 
-// DIR *dir = opendir("/sdcard");
-// if (!dir) {
-//     ESP_LOGE(TAG, "Failed to open /sdcard: %s", strerror(errno));
-//     return;
-// }
+xTaskCreate(button_capture, "button_capture_task", 4096, NULL, 5, NULL);
 
-// struct dirent *entry;
+DIR *dir = opendir("/sdcard");
+if (!dir) {
+    ESP_LOGE(TAG, "Failed to open /sdcard: %s", strerror(errno));
+    return;
+}
+
+struct dirent *entry;
 PedestrianDetect *detect = new PedestrianDetect();
 dl::image::img_t cropped_img;
 cropped_img.width = 240;
@@ -219,93 +293,93 @@ if (!cropped_img.data) {
     return;
 }
 
-int img_count = 0;
-// 3. Loop through each image path, download, and process
-    for (int i = start_index; i < image_paths.size(); i++) {
-        const auto& image_path = image_paths[i];
-        char image_url[272];
-        // The find command on Mac/Linux prefixes with './', let's handle that
+// int img_count = 0;
+// // 3. Loop through each image path, download, and process
+//     for (int i = start_index; i < image_paths.size(); i++) {
+//         const auto& image_path = image_paths[i];
+//         char image_url[272];
+//         // The find command on Mac/Linux prefixes with './', let's handle that
 
-         if (image_path.find(" ") != std::string::npos ||
-        image_path.find("(") != std::string::npos ||
-        image_path.find(")") != std::string::npos) {
-        ESP_LOGW(TAG, "Skipping image due to invalid characters: %s", image_path.c_str());
+//          if (image_path.find(" ") != std::string::npos ||
+//         image_path.find("(") != std::string::npos ||
+//         image_path.find(")") != std::string::npos) {
+//         ESP_LOGW(TAG, "Skipping image due to invalid characters: %s", image_path.c_str());
+//         continue;
+//         }
+
+//         const char* path_to_use = image_path.c_str();
+//         if (strncmp(path_to_use, "./", 2) == 0) {
+//             path_to_use += 2;
+//         }
+//         snprintf(image_url, sizeof(image_url), "http://%s:%s/%s", SERVER_IP, SERVER_PORT, path_to_use);
+//         ESP_LOGI(TAG, "Processing image: %s", image_url);
+
+//         uint8_t *image_buffer = nullptr;
+        
+//         esp_http_client_config_t config_img = { .url = image_url, .timeout_ms = 15000 };
+//         esp_http_client_handle_t client_img = esp_http_client_init(&config_img);
+
+//         if (esp_http_client_open(client_img, 0) != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to open HTTP connection to %s", image_url);
+//             esp_http_client_close(client_img);
+//             esp_http_client_cleanup(client_img);
+//             continue;
+//         }
+
+//         int img_len = esp_http_client_fetch_headers(client_img);
+//         if (img_len <= 0) {
+//             ESP_LOGE(TAG, "Failed to get content length for %s", image_url);
+//             esp_http_client_close(client_img);
+//             esp_http_client_cleanup(client_img);
+//             continue;
+//         }
+
+//          ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+//         if (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) < MIN_FREE_SPIRAM) {
+//         ESP_LOGE(TAG, "Memory low (%d bytes). Restarting to prevent crash.", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+//         esp_restart();
+//     }
+        
+//         image_buffer = (uint8_t *)heap_caps_malloc(img_len, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+//         if (!image_buffer) {
+//             ESP_LOGE(TAG, "Failed to allocate memory for image");
+//             esp_http_client_close(client_img);
+//             esp_http_client_cleanup(client_img);
+//             continue;
+//         }
+
+//         esp_http_client_read_response(client_img, (char*)image_buffer, img_len);
+//         esp_http_client_close(client_img);
+//         esp_http_client_cleanup(client_img);
+
+while ((entry = readdir(dir)) != NULL) {
+    if (entry->d_type != DT_REG) continue; // Skip if not a regular file
+
+    const char *fname = entry->d_name;
+    
+    if (strncmp(fname, "._", 2) == 0 || fname[0] == '.') continue;
+    if (!(strstr(fname, ".JPG") || strstr(fname, ".jpg"))) continue; // Only JPGs
+    
+    char image_path[272];
+    snprintf(image_path, sizeof(image_path), "/sdcard/%s", fname);
+
+    FILE *file = fopen(image_path, "rb");
+    if (!file) {
+        ESP_LOGE(TAG, "Failed to open image file: %s", strerror(errno));
         continue;
-        }
-
-        const char* path_to_use = image_path.c_str();
-        if (strncmp(path_to_use, "./", 2) == 0) {
-            path_to_use += 2;
-        }
-        snprintf(image_url, sizeof(image_url), "http://%s:%s/%s", SERVER_IP, SERVER_PORT, path_to_use);
-        ESP_LOGI(TAG, "Processing image: %s", image_url);
-
-        uint8_t *image_buffer = nullptr;
-        
-        esp_http_client_config_t config_img = { .url = image_url, .timeout_ms = 15000 };
-        esp_http_client_handle_t client_img = esp_http_client_init(&config_img);
-
-        if (esp_http_client_open(client_img, 0) != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to open HTTP connection to %s", image_url);
-            esp_http_client_close(client_img);
-            esp_http_client_cleanup(client_img);
-            continue;
-        }
-
-        int img_len = esp_http_client_fetch_headers(client_img);
-        if (img_len <= 0) {
-            ESP_LOGE(TAG, "Failed to get content length for %s", image_url);
-            esp_http_client_close(client_img);
-            esp_http_client_cleanup(client_img);
-            continue;
-        }
-
-         ESP_LOGI(TAG, "Free SPIRAM before decode: %d bytes", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-        if (heap_caps_get_free_size(MALLOC_CAP_SPIRAM) < MIN_FREE_SPIRAM) {
-        ESP_LOGE(TAG, "Memory low (%d bytes). Restarting to prevent crash.", heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-        esp_restart();
     }
-        
-        image_buffer = (uint8_t *)heap_caps_malloc(img_len, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-        if (!image_buffer) {
-            ESP_LOGE(TAG, "Failed to allocate memory for image");
-            esp_http_client_close(client_img);
-            esp_http_client_cleanup(client_img);
-            continue;
-        }
+    fseek(file, 0, SEEK_END);
+    size_t file_size = ftell(file);
+    rewind(file);
+    uint8_t *image_buffer = (uint8_t *)heap_caps_malloc(file_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 
-        esp_http_client_read_response(client_img, (char*)image_buffer, img_len);
-        esp_http_client_close(client_img);
-        esp_http_client_cleanup(client_img);
-
-// while ((entry = readdir(dir)) != NULL) {
-//     if (entry->d_type != DT_REG) continue; // Skip if not a regular file
-
-//     const char *fname = entry->d_name;
-    
-//     if (strncmp(fname, "._", 2) == 0 || fname[0] == '.') continue;
-//     if (!(strstr(fname, ".JPG") || strstr(fname, ".jpg"))) continue; // Only JPGs
-    
-//     char image_path[272];
-//     snprintf(image_path, sizeof(image_path), "/sdcard/%s", fname);
-
-//     FILE *file = fopen(image_path, "rb");
-//     if (!file) {
-//         ESP_LOGE(TAG, "Failed to open image file: %s", strerror(errno));
-//         continue;
-//     }
-//     fseek(file, 0, SEEK_END);
-//     size_t file_size = ftell(file);
-//     rewind(file);
-//     uint8_t *image_buffer = (uint8_t *)heap_caps_malloc(file_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-
-//     if (!image_buffer) {
-//         ESP_LOGE(TAG, "Failed to allocate memory for image");
-//         fclose(file);
-//         continue;
-//     }
-//     fread(image_buffer, 1, file_size, file);
-//     fclose(file);
+    if (!image_buffer) {
+        ESP_LOGE(TAG, "Failed to allocate memory for image");
+        fclose(file);
+        continue;
+    }
+    fread(image_buffer, 1, file_size, file);
+    fclose(file);
 
     dl::image::jpeg_img_t jpeg_img = {
         .data = image_buffer,
@@ -376,23 +450,23 @@ int img_count = 0;
         }
         fprintf(output_file, "----\n"); // Separator between images
         fclose(output_file);
-    err = nvs_set_i32(nvs_handle, "img_idx", i + 1); // Save the NEXT index
-    err = nvs_commit(nvs_handle);
-    if (err != ESP_OK) {
-    ESP_LOGE(TAG, "Failed to commit NVS changes!");
-    }
-        img_count++;
+    // err = nvs_set_i32(nvs_handle, "img_idx", i + 1); // Save the NEXT index
+    // err = nvs_commit(nvs_handle);
+    // if (err != ESP_OK) {
+    // ESP_LOGE(TAG, "Failed to commit NVS changes!");
+    // }
+    //     img_count++;
 
-        heap_caps_free(img.data);       
-        heap_caps_free(image_buffer);
-    }  
+    //     heap_caps_free(img.data);       
+    //     heap_caps_free(image_buffer);
+    //}  
 
 heap_caps_free(cropped_img.data);
-nvs_close(nvs_handle);
+// nvs_close(nvs_handle);
 delete detect;  
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
 ESP_LOGI(TAG, "Processing complete. SD card unmounted.");
-// closedir(dir);
+closedir(dir);
 
 #if CONFIG_PEDESTRIAN_DETECT_MODEL_IN_SDCARD
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
