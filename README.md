@@ -264,3 +264,11 @@ Resolve version errors and run the sample program.
 N/A 
 ### What I Accomplished
 To resolve the version errors, I needed to redownload ESP-WHO with version 1.1.0. After this, I needed to change the paths listed in CMakeLists to reflect the new file structure. However, I continued to get compilation errors because the code in the original pedestrian-detect file depended on the older version of ESP-WHO, which was not compatible with my version of ESP-IDF. After looking through the examples in the esp-who folder, I found examples of human-face-detection and human-face-recognition, which I decided to go off of instead. I was able to compile and flash both files after some version control issues were resolved; however, there was a runtime error of the files trying to use two I2C drivers at the same time. I was able to modify the sdkconfig file to use the legacy I2C driver instead of the new I2C driver, which resolved the issue. My next steps now will be to modify this code to be able to press and button and take a picture to save to the SD card. 
+
+## Wednesday, July 16, 2025
+### Task
+Resolve any remaining compilation issues and modify the example program.
+### Notes
+N/A 
+### What I Accomplished
+I attempted to compile the code once again and found a version conflict issue between the esp32s3_eye_noglib library and the pedestrian_detect library. I also found that the ESP-WHO components weren't compatible with the version of ESP-DL that was being used in my project. However, I was able to solve both of these issues by modifying the idf_components.yml file to take a newer version of pedestrian_detect. After some further research, I found that it is not possible to execute two .cpp files in sequence, but rather that I must create a function and add it to app_main. Thus, doing this will be my next step in the process. 
