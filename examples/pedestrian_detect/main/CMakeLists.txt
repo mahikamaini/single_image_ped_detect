@@ -1,4 +1,4 @@
-set(camera_capture.cpp)
+set(app_main.cpp)
 
 set(include_dirs    ./)
 
