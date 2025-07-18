@@ -272,3 +272,11 @@ Resolve any remaining compilation issues and modify the example program.
 N/A 
 ### What I Accomplished
 I attempted to compile the code once again and found a version conflict issue between the esp32s3_eye_noglib library and the pedestrian_detect library. I also found that the ESP-WHO components weren't compatible with the version of ESP-DL that was being used in my project. However, I was able to solve both of these issues by modifying the idf_components.yml file to take a newer version of pedestrian_detect. After some further research, I found that it is not possible to execute two .cpp files in sequence, but rather that I must create a function and add it to app_main. Thus, doing this will be my next step in the process. 
+
+## Thursday, July 17, 2025
+### Task
+Modify app_main for the camera function and compile it/fix any remaining issues. 
+### Notes
+N/A 
+### What I Accomplished
+Working of off the button press code that Ben had provided, I was able to create a task that runs in an infinite loop within the program. This task checks if the button is pressed, and if so, get a frame from the camera, convert it to JPEG, and save it to the SD card. However, when I tried to compile the code, I got a significant amount of CMake errors. I tried adding esp-who as a component to CMakeLists, but it's not available on the official component registry and thus wasn't recognized by the compiler. Eventually, I cloned esp-who into my project's components folder and added it as a dependency in the root CMakeLists file. However, compilation issues still persisted due to the file structure of my project, so I made the decision to revert to an earlier commit of the project while still preserving the app_main contents. 
