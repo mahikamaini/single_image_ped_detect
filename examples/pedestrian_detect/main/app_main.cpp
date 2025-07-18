@@ -10,8 +10,8 @@
 #include "dl_image_define.hpp"
 #include "dl_image_jpeg.hpp"
 #include "dl_image_process.hpp"
-#include "who_camera.h"
-#include "who_lcd.h"
+#include "esp_camera.h"
+#include "bsp/esp32_s3_eye.h"
 #include "nvs_flash.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -130,7 +130,7 @@ const char *TAG = "pedestrian_detect";
 float read_adc_voltage()
 {
     // Read the raw ADC value (0-4095)
-    int adc_value = adc1_get_raw(ADC1_CHANNEL_0);
+    int adc_value = adc1_get_raw(ADC_CHANNEL_0);
     // Convert ADC value to voltage (0 to 3.3V)
     float voltage = (adc_value / 4095.0) * 3.3;
     return voltage;
@@ -149,7 +149,7 @@ bool is_menu_button_pressed()
     return false;  // MENU button not pressed
 }
 
-static void button_capture(void *arg) {
+static void button_capture() {
     while (true) {
         if (is_menu_button_pressed()) {
             ESP_LOGE(TAG, "Menu button pressed!");
@@ -197,7 +197,7 @@ static void button_capture(void *arg) {
 
 extern "C" void app_main(void) {
 
-   camera_capture();
+   button_capture();
 
 //   //Initialize NVS
 //     esp_err_t ret = nvs_flash_init();
@@ -272,6 +272,9 @@ extern "C" void app_main(void) {
 
 ESP_ERROR_CHECK(bsp_sdcard_mount());
 ESP_LOGI(TAG, "SD card is mounted!");
+
+bsp_display_new();
+esp_camera_init();
 
 xTaskCreate(button_capture, "button_capture_task", 4096, NULL, 5, NULL);
 
@@ -383,12 +386,12 @@ while ((entry = readdir(dir)) != NULL) {
 
     dl::image::jpeg_img_t jpeg_img = {
         .data = image_buffer,
-        .data_len = (size_t) img_len
+        .data_len = file_size
     };
 
     // decode jpeg into image we can use
     auto img = sw_decode_jpeg(jpeg_img, dl::image::DL_IMAGE_PIX_TYPE_RGB888, 0);
-    ESP_LOGI(TAG, "Image %d of %zu processing.", i + 1, image_paths.size());
+    // ESP_LOGI(TAG, "Image %d of %zu processing.", i + 1, image_paths.size());
     if (!img.data) {
         ESP_LOGE(TAG, "Failed to decode image, skipping.");
         heap_caps_free(image_buffer); // Free the original JPEG buffer
@@ -436,9 +439,9 @@ while ((entry = readdir(dir)) != NULL) {
         return;
     }   
         if (best_results.empty() || best_results.size() == 0) {
-            fprintf(output_file, "Image: %s -> No pedestrian detected\n", image_path.c_str());
+            fprintf(output_file, "Image: %s -> No pedestrian detected\n", image_path);
         } else {
-            fprintf(output_file, "Image: %s -> %zu pedestrian(s) detected:\n", image_path.c_str(), best_results.size());
+            fprintf(output_file, "Image: %s -> %zu pedestrian(s) detected:\n", image_path, best_results.size());
             for (const auto &res : best_results) {
                 fprintf(output_file, "[score: %.2f, x1: %d, y1: %d, x2: %d, y2: %d]\n",
                         res.score,
@@ -463,6 +466,8 @@ while ((entry = readdir(dir)) != NULL) {
 
 heap_caps_free(cropped_img.data);
 // nvs_close(nvs_handle);
+} 
+
 delete detect;  
 ESP_ERROR_CHECK(bsp_sdcard_unmount());
 ESP_LOGI(TAG, "Processing complete. SD card unmounted.");
