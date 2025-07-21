@@ -280,3 +280,11 @@ Modify app_main for the camera function and compile it/fix any remaining issues.
 N/A 
 ### What I Accomplished
 Working of off the button press code that Ben had provided, I was able to create a task that runs in an infinite loop within the program. This task checks if the button is pressed, and if so, get a frame from the camera, convert it to JPEG, and save it to the SD card. However, when I tried to compile the code, I got a significant amount of CMake errors. I tried adding esp-who as a component to CMakeLists, but it's not available on the official component registry and thus wasn't recognized by the compiler. Eventually, I cloned esp-who into my project's components folder and added it as a dependency in the root CMakeLists file. However, compilation issues still persisted due to the file structure of my project, so I made the decision to revert to an earlier commit of the project while still preserving the app_main contents. 
+
+## Friday, July 18, 2025
+### Task
+Resolve all CMake and dependency-related compilation issues. 
+### Notes
+N/A 
+### What I Accomplished
+I tried downloading the esp-who library into the project to be able to use its components; however, this was not compatible with my version of ESP-IDF as the esp-who library was out of date. I ended up removing esp-who and downloading the more modern esp32_s3_eye_noglib library that was compatible with my ESP32-S3 and simplified code. After updating the idf.yml and CMakeLists files with the necessary components, I was able to compile the file with no issues except for the actual camera code. My next steps will be to resolve any camera code-related errors and hopefully get it running on the device. 
