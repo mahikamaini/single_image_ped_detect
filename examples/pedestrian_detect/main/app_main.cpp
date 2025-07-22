@@ -12,6 +12,13 @@
 #include "dl_image_process.hpp"
 #include "esp_camera.h"
 #include "bsp/esp32_s3_eye.h"
+#include "bsp/esp-bsp.h"
+#include "bsp/display.h"
+#include "esp_lcd_panel_io.h"
+#include "esp_lcd_panel_vendor.h"
+#include "esp_lcd_panel_ops.h"
+#include "iot_button.h"
+#include "esp_adc/adc_oneshot.h"
 #include "nvs_flash.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -34,7 +41,8 @@
 // #define ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD "WPA2 PSK"
 // #define ESP_WIFI_SAE_MODE "BOTH"
 // #define EXAMPLE_H2E_IDENTIFIER "H2E"
-
+static volatile bool is_menu_button_pressed = false;
+static volatile bool is_play_button_pressed = false;
 const char *TAG = "pedestrian_detect";
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -127,77 +135,115 @@ const char *TAG = "pedestrian_detect";
 //     }
 // }
 
-float read_adc_voltage()
+// float read_adc_voltage()
+// {
+//     // Read the raw ADC value (0-4095)
+//     int adc_value = adc1_get_raw(ADC1_CHANNEL_0);
+//     // Convert ADC value to voltage (0 to 3.3V)
+//     float voltage = (adc_value / 4095.0) * 3.3;
+//     return voltage;
+// }
+// bool is_menu_button_pressed()
+// {
+//     // Read the ADC value and convert to voltage
+//     float voltage = read_adc_voltage();
+//     // Print ADC value and voltage for debugging
+//     printf("ADC Value: %d, Voltage: %.2fV\n", adc1_get_raw(ADC1_CHANNEL_0), voltage);
+//     // Check if the voltage is close to the "MENU" button voltage
+//     if (voltage >= (MENU_BUTTON_VOLTAGE - ADC_THRESHOLD) && voltage <= (MENU_BUTTON_VOLTAGE + ADC_THRESHOLD))
+//     {
+//         return true;  // MENU button pressed
+//     }
+//     return false;  // MENU button not pressed
+// }
+
+static void menu_button_cb(void *arg, void *usr_data)
 {
-    // Read the raw ADC value (0-4095)
-    int adc_value = adc1_get_raw(ADC_CHANNEL_0);
-    // Convert ADC value to voltage (0 to 3.3V)
-    float voltage = (adc_value / 4095.0) * 3.3;
-    return voltage;
+    is_menu_button_pressed = true;
 }
-bool is_menu_button_pressed()
+
+static void play_button_cb(void *arg, void *usr_data)
 {
-    // Read the ADC value and convert to voltage
-    float voltage = read_adc_voltage();
-    // Print ADC value and voltage for debugging
-    printf("ADC Value: %d, Voltage: %.2fV\n", adc_value, voltage);
-    // Check if the voltage is close to the "MENU" button voltage
-    if (voltage >= (MENU_BUTTON_VOLTAGE - ADC_THRESHOLD) && voltage <= (MENU_BUTTON_VOLTAGE + ADC_THRESHOLD))
-    {
-        return true;  // MENU button pressed
-    }
-    return false;  // MENU button not pressed
+    is_play_button_pressed = true;
 }
 
-static void button_capture() {
-    while (true) {
-        if (is_menu_button_pressed()) {
-            ESP_LOGE(TAG, "Menu button pressed!");
-            vTaskDelay(pdMS_TO_TICKS(200));
-            // click and save photo
-        }
-              // 1. Get a frame from the camera
-            camera_fb_t *fb = esp_camera_fb_get();
-            if (!fb) {
-                ESP_LOGE(TAG, "Camera capture failed");
-                continue; // Skip this attempt
-            }
+void click_and_save_pic() {
+    static int pic_count = 0;
+    ESP_LOGI(TAG, "Menu button pressed. Taking a picture...");
+    esp_camera_deinit();
+    camera_config_t jpeg_config = BSP_CAMERA_DEFAULT_CONFIG;
+    jpeg_config.pixel_format = PIXFORMAT_JPEG;
+    jpeg_config.frame_size = FRAMESIZE_VGA;
+    jpeg_config.jpeg_quality = 12;
 
-            // 2. Convert the frame to JPEG format
-            uint8_t *jpg_buf = NULL;
-            size_t jpg_len = 0;
-            bool converted = fmt2jpg(fb->buf, fb->len, fb->width, fb->height, fb->format, 80, &jpg_buf, &jpg_len);
-            
-            // Return the original frame buffer IMMEDIATELY after conversion
-            esp_camera_fb_return(fb);
+    esp_camera_init(&jpeg_config);
+    vTaskDelay(pdMS_TO_TICKS(100));
 
-            if (!converted) {
-                ESP_LOGE(TAG, "JPEG conversion failed");
-                continue;
-            }
-
-            // 3. Create a unique filename and save the JPEG to the SD card
-            char path[32];
-            sprintf(path, "/sdcard/capture_%llu.jpg", esp_timer_get_time());
-
-            FILE *f = fopen(path, "w");
-            if (f == NULL) {
-                ESP_LOGE(TAG, "Failed to open file for writing");
+        camera_fb_t * pic = esp_camera_fb_get();
+        if (pic) {
+        // save to sd card
+            pic_count++;
+            char filename[40];
+            sprintf(filename, "/sdcard/capture_%d.jpg", pic_count);
+            FILE *file = fopen(filename, "wb");
+            if (file) {
+                fwrite(pic->buf, 1, pic->len, file);
+                ESP_LOGI(TAG, "Picture saved with name %s", filename);
+                fclose(file);
             } else {
-                fwrite(jpg_buf, 1, jpg_len, f);
-                ESP_LOGI(TAG, "Saved photo to: %s", path);
-                fclose(f);
+                ESP_LOGE(TAG, "Could not save picture");
             }
+        esp_camera_fb_return(pic);
+    } else {
+        ESP_LOGE(TAG, "Couldn't capture picture in JPEG mode");
+    }
+    ESP_LOGI(TAG, "Picture clicked and saved!");
+    esp_camera_deinit();
 
-            // 4. Free the JPEG buffer's memory
-            free(jpg_buf);
-        }
-        vTaskDelay(pdMS_TO_TICKS(20)); // Poll every 20ms
-}  
+    camera_config_t rgb_config = BSP_CAMERA_DEFAULT_CONFIG;
+    rgb_config.pixel_format = PIXFORMAT_RGB565;
+    rgb_config.frame_size = FRAMESIZE_240X240;
+    esp_camera_init(&rgb_config);
+    
+    ESP_LOGI(TAG, "Switched back to live preview mode.");
+}
+
 
 extern "C" void app_main(void) {
 
-   button_capture();
+    bsp_i2c_init();
+    ESP_ERROR_CHECK(bsp_sdcard_mount());
+    ESP_LOGI(TAG, "SD card is mounted!");
+    esp_lcd_panel_handle_t panel_handle = bsp_lcd_init();
+    bsp_display_backlight_on();
+    camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
+    camera_config.pixel_format = PIXFORMAT_RGB565;
+    camera_config.frame_size = FRAMESIZE_240X240;
+    esp_camera_init(&camera_config);
+
+    button_handle_t btns[BSP_BUTTON_NUM] = {NULL};
+    bsp_iot_button_create(btns, NULL, BSP_BUTTON_NUM);
+
+    iot_button_register_cb(btns[BSP_BUTTON_MENU], BUTTON_SINGLE_CLICK, NULL, menu_button_cb, NULL);
+    iot_button_register_cb(btns[BSP_BUTTON_PLAY], BUTTON_SINGLE_CLICK, NULL, play_button_cb, NULL);
+    while (true) {
+    if (is_play_button_pressed) {
+        ESP_LOGI(TAG, "Play button pressed. Exiting program.");
+        break; // This exits the while loop
+    }
+
+    // Next, check if we should take a picture
+    if (is_menu_button_pressed) {
+        click_and_save_pic();
+        is_menu_button_pressed = false;
+    }
+
+     camera_fb_t *fb = esp_camera_fb_get();
+     if (fb) {
+            esp_lcd_panel_draw_bitmap(0, 0, fb->width, fb->height, (uint16_t *)fb->buf);
+            esp_camera_fb_return(fb);
+        }
+    }
 
 //   //Initialize NVS
 //     esp_err_t ret = nvs_flash_init();
@@ -269,14 +315,6 @@ extern "C" void app_main(void) {
 // }
 
 // ESP_LOGI(TAG, "Successfully downloaded and parsed image list. Found %zu images.", image_paths.size());
-
-ESP_ERROR_CHECK(bsp_sdcard_mount());
-ESP_LOGI(TAG, "SD card is mounted!");
-
-bsp_display_new();
-esp_camera_init();
-
-xTaskCreate(button_capture, "button_capture_task", 4096, NULL, 5, NULL);
 
 DIR *dir = opendir("/sdcard");
 if (!dir) {
