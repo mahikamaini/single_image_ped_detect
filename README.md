@@ -288,3 +288,11 @@ Resolve all CMake and dependency-related compilation issues.
 N/A 
 ### What I Accomplished
 I tried downloading the esp-who library into the project to be able to use its components; however, this was not compatible with my version of ESP-IDF as the esp-who library was out of date. I ended up removing esp-who and downloading the more modern esp32_s3_eye_noglib library that was compatible with my ESP32-S3 and simplified code. After updating the idf.yml and CMakeLists files with the necessary components, I was able to compile the file with no issues except for the actual camera code. My next steps will be to resolve any camera code-related errors and hopefully get it running on the device. 
+
+## Monday, July 21, 2025
+### Task
+Develop camera code and get it running. 
+### Notes
+N/A 
+### What I Accomplished
+When I tried to run the sample ADC button code that Ben had provided, there were several compilation issues due to this function being out of date. I replaced this with the iot_button component from the BSP (Board Support Package), adding functionality for the MENU (take a picture) and PLAY (end capture mode) buttons. After, I added code to initialize the camera and the LCD screen (to show real-time camera footage), as well as saving the images to the SD card when the MENU button was pressed. However, when I tried running this, I ran into several compilation errors related to the bitmap drawing function - either from function naming or by missing function arguments. My next step is to resolve this issue and get to testing the program functionality. 
