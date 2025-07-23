@@ -211,21 +211,35 @@ void click_and_save_pic() {
 
 extern "C" void app_main(void) {
 
-    bsp_i2c_init();
     ESP_ERROR_CHECK(bsp_sdcard_mount());
-    ESP_LOGI(TAG, "SD card is mounted!");
-    esp_lcd_panel_handle_t panel_handle = bsp_lcd_init();
+    bsp_i2c_init();
+
+    bsp_display_config_t bsp_disp_cfg = {
+            // Set the transfer buffer size
+            .max_transfer_sz = BSP_LCD_DRAW_BUFF_SIZE * sizeof(uint16_t),
+        };
+
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+
+    // 2. Initialize the display. This function will fill our handle variables.
+    bsp_display_new(&bsp_disp_cfg, &panel_handle, &io_handle);
+
+    // 3. Turn on the backlight.
     bsp_display_backlight_on();
+
+    // 5. Now, initialize the camera for live view
     camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
     camera_config.pixel_format = PIXFORMAT_RGB565;
     camera_config.frame_size = FRAMESIZE_240X240;
     esp_camera_init(&camera_config);
 
+    // 6. Set up the buttons
     button_handle_t btns[BSP_BUTTON_NUM] = {NULL};
     bsp_iot_button_create(btns, NULL, BSP_BUTTON_NUM);
-
     iot_button_register_cb(btns[BSP_BUTTON_MENU], BUTTON_SINGLE_CLICK, NULL, menu_button_cb, NULL);
     iot_button_register_cb(btns[BSP_BUTTON_PLAY], BUTTON_SINGLE_CLICK, NULL, play_button_cb, NULL);
+
     while (true) {
     if (is_play_button_pressed) {
         ESP_LOGI(TAG, "Play button pressed. Exiting program.");
@@ -240,7 +254,7 @@ extern "C" void app_main(void) {
 
      camera_fb_t *fb = esp_camera_fb_get();
      if (fb) {
-            esp_lcd_panel_draw_bitmap(0, 0, fb->width, fb->height, (uint16_t *)fb->buf);
+            esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, fb->width, fb->height, (uint16_t *)fb->buf);
             esp_camera_fb_return(fb);
         }
     }
