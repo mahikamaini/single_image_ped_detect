@@ -2,14 +2,6 @@ set(srcs "app_main.cpp")
 
 set(include_dirs    ./)
 
-set(requires        pedestrian_detect nvs_flash esp_http_client esp_wifi esp_event esp32_s3_eye_noglib button)
-
-if (IDF_TARGET STREQUAL "esp32s3")
-    list(APPEND requires esp32_s3_eye_noglib
-                         esp_lcd)
-elseif (IDF_TARGET STREQUAL "esp32p4")
-    list(APPEND requires esp32_p4_function_ev_board_noglib
-                         esp_lcd)
-endif()
+set(requires        pedestrian_detect nvs_flash esp_http_client esp_wifi esp_event button esp_lcd espressif__esp32_s3_eye)
 
 idf_component_register(SRCS ${srcs} INCLUDE_DIRS ${include_dirs} REQUIRES ${requires})
