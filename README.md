@@ -296,3 +296,11 @@ Develop camera code and get it running.
 N/A 
 ### What I Accomplished
 When I tried to run the sample ADC button code that Ben had provided, there were several compilation issues due to this function being out of date. I replaced this with the iot_button component from the BSP (Board Support Package), adding functionality for the MENU (take a picture) and PLAY (end capture mode) buttons. After, I added code to initialize the camera and the LCD screen (to show real-time camera footage), as well as saving the images to the SD card when the MENU button was pressed. However, when I tried running this, I ran into several compilation errors related to the bitmap drawing function - either from function naming or by missing function arguments. My next step is to resolve this issue and get to testing the program functionality. 
+
+## Tuesday, July 22, 2025
+### Task
+Resolve remaining bitmap compilation issues and test code. 
+### Notes
+N/A 
+### What I Accomplished
+I tried to incorporate the LVGL graphics library to display a live camera feed on the ESP32's LCD screen, but it turned out that LVGL didn't need to be added as a dependency as it worked "behind the scenes" with the BSP package. I added the BSP component explicitly in main/CMakeLists and relied on a documentation page to implement LCD display with my project - no LVGL required. After running into some version conflict issues with the BSP component, I realized I needed to remove the "no graphics" version from my dependencies. I managed to compile the program with no errors; however, when I tried pressing the MENU button to take a picture, I got errors that there was "no peripheral connected" and "failed to get frame". Additionally, the LCD screen wasn't showing the camera feed, either. The issue lies within my capture() function, so I will look at this to debug. 
