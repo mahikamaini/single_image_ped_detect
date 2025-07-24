@@ -304,3 +304,11 @@ Resolve remaining bitmap compilation issues and test code.
 N/A 
 ### What I Accomplished
 I tried to incorporate the LVGL graphics library to display a live camera feed on the ESP32's LCD screen, but it turned out that LVGL didn't need to be added as a dependency as it worked "behind the scenes" with the BSP package. I added the BSP component explicitly in main/CMakeLists and relied on a documentation page to implement LCD display with my project - no LVGL required. After running into some version conflict issues with the BSP component, I realized I needed to remove the "no graphics" version from my dependencies. I managed to compile the program with no errors; however, when I tried pressing the MENU button to take a picture, I got errors that there was "no peripheral connected" and "failed to get frame". Additionally, the LCD screen wasn't showing the camera feed, either. The issue lies within my capture() function, so I will look at this to debug. 
+
+## Wednesday, July 23, 2025
+### Task
+Debug capture() function. 
+### Notes
+N/A 
+### What I Accomplished
+After compiling, I checked the SD card and found the images - however, they were corrupted and the pedestrian detect part of the code wasn't able to analyze them as a result. The terminal log showed "FB-OVF", which after researching, I discovered meant that the camera's memory buffers were too small for the image data. Using Gemini as a guide, I tried to initialize and deinitialize the camera for each photo so the memory buffers would be sufficient. The pictures themselves were no longer corrupted, but this caused hardware resource conflicts and there was still no live feed. I then commented out the picture code to see if I could get a live feed on the screen, but I ended up getting "EV-EOF-OVF" - indicating a low-level hardware error. However, I confirmed that all cables and components were properly connected, so I don't think that this is the cause. I found an Espressif example that utilizes a live video feed, so I will look into possibly adapting this for my use. 
