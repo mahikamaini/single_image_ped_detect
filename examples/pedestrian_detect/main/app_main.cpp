@@ -168,96 +168,102 @@ static void play_button_cb(void *arg, void *usr_data)
 }
 
 void click_and_save_pic() {
-    static int pic_count = 0;
-    ESP_LOGI(TAG, "Menu button pressed. Taking a picture...");
-    esp_camera_deinit();
-    camera_config_t jpeg_config = BSP_CAMERA_DEFAULT_CONFIG;
-    jpeg_config.pixel_format = PIXFORMAT_JPEG;
-    jpeg_config.frame_size = FRAMESIZE_VGA;
-    jpeg_config.jpeg_quality = 12;
+    ESP_LOGI(TAG, "Menu button pressed! Taking a picture...");
 
-    esp_camera_init(&jpeg_config);
-    vTaskDelay(pdMS_TO_TICKS(100));
+    // 1. Get the camera's sensor object
+    sensor_t *s = esp_camera_sensor_get();
 
-        camera_fb_t * pic = esp_camera_fb_get();
-        if (pic) {
-        // save to sd card
-            pic_count++;
-            char filename[40];
-            sprintf(filename, "/sdcard/capture_%d.jpg", pic_count);
-            FILE *file = fopen(filename, "wb");
-            if (file) {
-                fwrite(pic->buf, 1, pic->len, file);
-                ESP_LOGI(TAG, "Picture saved with name %s", filename);
-                fclose(file);
-            } else {
-                ESP_LOGE(TAG, "Could not save picture");
-            }
+    // 2. Set the settings for a high-quality photo
+    s->set_pixformat(s, PIXFORMAT_JPEG);
+    s->set_framesize(s, FRAMESIZE_VGA);
+    
+    // Give the sensor time to adjust to new settings
+    vTaskDelay(pdMS_TO_TICKS(250));
+
+    // 3. Capture and save the JPEG image
+    camera_fb_t *pic = esp_camera_fb_get();
+    if (pic) {
+        static int pic_count = 0;
+        pic_count++;
+        char filename[40];
+        sprintf(filename, "/sdcard/capture_%d.jpg", pic_count);
+
+        FILE *file = fopen(filename, "wb");
+        if (file) {
+            fwrite(pic->buf, 1, pic->len, file);
+            ESP_LOGI(TAG, "Picture saved: %s", filename);
+            fclose(file);
+        } else {
+            ESP_LOGE(TAG, "Could not open file for saving");
+        }
         esp_camera_fb_return(pic);
     } else {
-        ESP_LOGE(TAG, "Couldn't capture picture in JPEG mode");
+        ESP_LOGE(TAG, "Failed to capture picture in JPEG mode");
     }
-    ESP_LOGI(TAG, "Picture clicked and saved!");
-    esp_camera_deinit();
 
-    camera_config_t rgb_config = BSP_CAMERA_DEFAULT_CONFIG;
-    rgb_config.pixel_format = PIXFORMAT_RGB565;
-    rgb_config.frame_size = FRAMESIZE_240X240;
-    esp_camera_init(&rgb_config);
-    
-    ESP_LOGI(TAG, "Switched back to live preview mode.");
+    // 4. IMPORTANT: Change settings back to live preview mode
+    ESP_LOGI(TAG, "Switching camera back to live preview mode...");
+    s->set_pixformat(s, PIXFORMAT_RGB565);
+    s->set_framesize(s, FRAMESIZE_240X240);
 }
 
 
 extern "C" void app_main(void) {
 
-    ESP_ERROR_CHECK(bsp_sdcard_mount());
+     ESP_ERROR_CHECK(bsp_sdcard_mount());
     bsp_i2c_init();
 
+    // Initialize the display
     bsp_display_config_t bsp_disp_cfg = {
-            // Set the transfer buffer size
-            .max_transfer_sz = BSP_LCD_DRAW_BUFF_SIZE * sizeof(uint16_t),
-        };
-
+        .max_transfer_sz = BSP_LCD_DRAW_BUFF_SIZE * sizeof(uint16_t),
+    };
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_io_handle_t io_handle = NULL;
-
-    // 2. Initialize the display. This function will fill our handle variables.
     bsp_display_new(&bsp_disp_cfg, &panel_handle, &io_handle);
-
-    // 3. Turn on the backlight.
     bsp_display_backlight_on();
 
-    // 5. Now, initialize the camera for live view
+    // NEW, SIMPLIFIED CONFIG: Initialize directly for the live preview
     camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
     camera_config.pixel_format = PIXFORMAT_RGB565;
     camera_config.frame_size = FRAMESIZE_240X240;
-    esp_camera_init(&camera_config);
+    camera_config.fb_count = 2; // Use 2 buffers for smooth video
+    camera_config.grab_mode = CAMERA_GRAB_LATEST;
+    camera_config.xclk_freq_hz = 16500000;
 
-    // 6. Set up the buttons
+    // Initialize the camera with the simple config
+    esp_err_t err = esp_camera_init(&camera_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Camera init failed with error 0x%x", err);
+        return; // Stop here if the camera fails
+    }
+
+    // Button setup
     button_handle_t btns[BSP_BUTTON_NUM] = {NULL};
     bsp_iot_button_create(btns, NULL, BSP_BUTTON_NUM);
     iot_button_register_cb(btns[BSP_BUTTON_MENU], BUTTON_SINGLE_CLICK, NULL, menu_button_cb, NULL);
     iot_button_register_cb(btns[BSP_BUTTON_PLAY], BUTTON_SINGLE_CLICK, NULL, play_button_cb, NULL);
 
+    ESP_LOGI(TAG, "Starting live preview...");
     while (true) {
-    if (is_play_button_pressed) {
-        ESP_LOGI(TAG, "Play button pressed. Exiting program.");
-        break; // This exits the while loop
-    }
+        if (is_play_button_pressed) {
+            break;
+        }
 
-    // Next, check if we should take a picture
-    if (is_menu_button_pressed) {
-        click_and_save_pic();
-        is_menu_button_pressed = false;
-    }
+        if (is_menu_button_pressed) {
+            click_and_save_pic();
+            is_menu_button_pressed = false;
+        }
 
-     camera_fb_t *fb = esp_camera_fb_get();
-     if (fb) {
+        camera_fb_t *fb = esp_camera_fb_get();
+        if (fb) {
             esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, fb->width, fb->height, (uint16_t *)fb->buf);
             esp_camera_fb_return(fb);
+        } else {
+            ESP_LOGW(TAG, "Failed to get frame for preview");
         }
     }
+
+    ESP_LOGI(TAG, "Exiting preview loop.");
 
 //   //Initialize NVS
 //     esp_err_t ret = nvs_flash_init();
