@@ -135,28 +135,6 @@ const char *TAG = "pedestrian_detect";
 //     }
 // }
 
-// float read_adc_voltage()
-// {
-//     // Read the raw ADC value (0-4095)
-//     int adc_value = adc1_get_raw(ADC1_CHANNEL_0);
-//     // Convert ADC value to voltage (0 to 3.3V)
-//     float voltage = (adc_value / 4095.0) * 3.3;
-//     return voltage;
-// }
-// bool is_menu_button_pressed()
-// {
-//     // Read the ADC value and convert to voltage
-//     float voltage = read_adc_voltage();
-//     // Print ADC value and voltage for debugging
-//     printf("ADC Value: %d, Voltage: %.2fV\n", adc1_get_raw(ADC1_CHANNEL_0), voltage);
-//     // Check if the voltage is close to the "MENU" button voltage
-//     if (voltage >= (MENU_BUTTON_VOLTAGE - ADC_THRESHOLD) && voltage <= (MENU_BUTTON_VOLTAGE + ADC_THRESHOLD))
-//     {
-//         return true;  // MENU button pressed
-//     }
-//     return false;  // MENU button not pressed
-// }
-
 static void menu_button_cb(void *arg, void *usr_data)
 {
     is_menu_button_pressed = true;
@@ -170,17 +148,12 @@ static void play_button_cb(void *arg, void *usr_data)
 void click_and_save_pic() {
     ESP_LOGI(TAG, "Menu button pressed! Taking a picture...");
 
-    // 1. Get the camera's sensor object
     sensor_t *s = esp_camera_sensor_get();
 
-    // 2. Set the settings for a high-quality photo
     s->set_pixformat(s, PIXFORMAT_JPEG);
     s->set_framesize(s, FRAMESIZE_VGA);
-    
-    // Give the sensor time to adjust to new settings
-    vTaskDelay(pdMS_TO_TICKS(250));
+    vTaskDelay(pdMS_TO_TICKS(500));
 
-    // 3. Capture and save the JPEG image
     camera_fb_t *pic = esp_camera_fb_get();
     if (pic) {
         static int pic_count = 0;
@@ -210,7 +183,7 @@ void click_and_save_pic() {
 
 extern "C" void app_main(void) {
 
-     ESP_ERROR_CHECK(bsp_sdcard_mount());
+    ESP_ERROR_CHECK(bsp_sdcard_mount());
     bsp_i2c_init();
 
     // Initialize the display
@@ -220,22 +193,30 @@ extern "C" void app_main(void) {
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_io_handle_t io_handle = NULL;
     bsp_display_new(&bsp_disp_cfg, &panel_handle, &io_handle);
+    bsp_display_start();
     bsp_display_backlight_on();
 
-    // NEW, SIMPLIFIED CONFIG: Initialize directly for the live preview
-    camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
-    camera_config.pixel_format = PIXFORMAT_RGB565;
-    camera_config.frame_size = FRAMESIZE_240X240;
-    camera_config.fb_count = 2; // Use 2 buffers for smooth video
-    camera_config.grab_mode = CAMERA_GRAB_LATEST;
-    camera_config.xclk_freq_hz = 16500000;
+    // camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
+    // camera_config.pixel_format = PIXFORMAT_JPEG;   // Set for JPEG initially
+    // camera_config.frame_size = FRAMESIZE_VGA;     // Set for VGA initially
+    // camera_config.jpeg_quality = 12;
+    // camera_config.fb_count = 2;                   // CRITICAL: Use at least 2 frame buffers
+    // camera_config.fb_location = CAMERA_FB_IN_PSRAM;
+    // camera_config.grab_mode = CAMERA_GRAB_LATEST;
+    // camera_config.xclk_freq_hz = 16500000; // Use a stable clock frequency
+    // esp_camera_init(&camera_config);
 
-    // Initialize the camera with the simple config
-    esp_err_t err = esp_camera_init(&camera_config);
+    camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
+      esp_err_t err = esp_camera_init(&camera_config);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Camera init failed with error 0x%x", err);
-        return; // Stop here if the camera fails
+        return;
     }
+    
+    // Immediately switch sensor to the smaller live preview settings
+    // sensor_t *s = esp_camera_sensor_get();
+    // s->set_pixformat(s, PIXFORMAT_RGB565);
+    // s->set_framesize(s, FRAMESIZE_240X240);
 
     // Button setup
     button_handle_t btns[BSP_BUTTON_NUM] = {NULL};
