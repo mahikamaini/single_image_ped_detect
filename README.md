@@ -312,3 +312,11 @@ Debug capture() function.
 N/A 
 ### What I Accomplished
 After compiling, I checked the SD card and found the images - however, they were corrupted and the pedestrian detect part of the code wasn't able to analyze them as a result. The terminal log showed "FB-OVF", which after researching, I discovered meant that the camera's memory buffers were too small for the image data. Using Gemini as a guide, I tried to initialize and deinitialize the camera for each photo so the memory buffers would be sufficient. The pictures themselves were no longer corrupted, but this caused hardware resource conflicts and there was still no live feed. I then commented out the picture code to see if I could get a live feed on the screen, but I ended up getting "EV-EOF-OVF" - indicating a low-level hardware error. However, I confirmed that all cables and components were properly connected, so I don't think that this is the cause. I found an Espressif example that utilizes a live video feed, so I will look into possibly adapting this for my use. 
+
+## Thursday, July 24, 2025
+### Task
+Continue debugging the live preview.
+### Notes
+N/A 
+### What I Accomplished
+After running the program again, I got new errors showing "NO-SOI - JPEG start marker missing". After consulting with Gemini, I learned it meant that the camera was stuck in JPEG (image processing) mode and that's why the live preview wasn't showing. From here, I concluded that it may be better to show the last photo taken on the screen rather than a live feed for simplicity purposes. This way, we wouldn't have to switch between JPEG and RGB565 mode and thus eliminates the possibility of the device getting stuck in either mode. 
