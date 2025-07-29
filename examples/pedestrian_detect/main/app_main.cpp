@@ -145,17 +145,14 @@ static void play_button_cb(void *arg, void *usr_data)
     is_play_button_pressed = true;
 }
 
-void click_and_save_pic() {
+void click_and_save_pic(esp_lcd_panel_handle_t panel_handle) {
     ESP_LOGI(TAG, "Menu button pressed! Taking a picture...");
 
-    sensor_t *s = esp_camera_sensor_get();
-
-    s->set_pixformat(s, PIXFORMAT_JPEG);
-    s->set_framesize(s, FRAMESIZE_VGA);
-    vTaskDelay(pdMS_TO_TICKS(500));
-
     camera_fb_t *pic = esp_camera_fb_get();
-    if (pic) {
+    if (!pic) {
+        ESP_LOGE(TAG, "Couldn't capture picture");
+        return;
+    }
         static int pic_count = 0;
         pic_count++;
         char filename[40];
@@ -169,54 +166,54 @@ void click_and_save_pic() {
         } else {
             ESP_LOGE(TAG, "Could not open file for saving");
         }
-        esp_camera_fb_return(pic);
-    } else {
-        ESP_LOGE(TAG, "Failed to capture picture in JPEG mode");
-    }
 
-    // 4. IMPORTANT: Change settings back to live preview mode
-    ESP_LOGI(TAG, "Switching camera back to live preview mode...");
-    s->set_pixformat(s, PIXFORMAT_RGB565);
-    s->set_framesize(s, FRAMESIZE_240X240);
+        uint16_t *rgb565_buff = (uint16_t *) heap_caps_malloc(pic->width * pic->height * sizeof(uint16_t), MALLOC_CAP_SPIRAM);
+        if (!rgb565_buff) {
+            ESP_LOGE(TAG, "Could not allocate memory for decoded image");
+        } else {
+            bool jpeg_converted = jpg2rgb565(pic->buf, pic->len, (uint8_t*)rgb565_buff, JPG_SCALE_NONE);
+            if (jpeg_converted) {
+              esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, pic->width, pic->height, rgb565_buff);  
+            } else {
+                ESP_LOGE(TAG, "Failed to decode JPEG");
+            }
+        }
+    
+    heap_caps_free(rgb565_buff);
+    esp_camera_fb_return(pic);
 }
 
 
 extern "C" void app_main(void) {
 
-    ESP_ERROR_CHECK(bsp_sdcard_mount());
     bsp_i2c_init();
 
-    // Initialize the display
     bsp_display_config_t bsp_disp_cfg = {
         .max_transfer_sz = BSP_LCD_DRAW_BUFF_SIZE * sizeof(uint16_t),
     };
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_io_handle_t io_handle = NULL;
-    bsp_display_new(&bsp_disp_cfg, &panel_handle, &io_handle);
-    bsp_display_start();
-    bsp_display_backlight_on();
 
-    // camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
-    // camera_config.pixel_format = PIXFORMAT_JPEG;   // Set for JPEG initially
-    // camera_config.frame_size = FRAMESIZE_VGA;     // Set for VGA initially
-    // camera_config.jpeg_quality = 12;
-    // camera_config.fb_count = 2;                   // CRITICAL: Use at least 2 frame buffers
-    // camera_config.fb_location = CAMERA_FB_IN_PSRAM;
-    // camera_config.grab_mode = CAMERA_GRAB_LATEST;
-    // camera_config.xclk_freq_hz = 16500000; // Use a stable clock frequency
-    // esp_camera_init(&camera_config);
+    ESP_ERROR_CHECK(bsp_display_new(&bsp_disp_cfg, &panel_handle, &io_handle));
+    
+     bsp_display_backlight_on();
 
     camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
-      esp_err_t err = esp_camera_init(&camera_config);
+    camera_config.pixel_format = PIXFORMAT_JPEG;   // Set for JPEG initially
+    camera_config.frame_size = FRAMESIZE_240X240;     // Set for VGA initially
+    camera_config.jpeg_quality = 12;
+    camera_config.fb_count = 2;                   // CRITICAL: Use at least 2 frame buffers
+    camera_config.fb_location = CAMERA_FB_IN_PSRAM;
+    camera_config.grab_mode = CAMERA_GRAB_LATEST;
+    camera_config.xclk_freq_hz = 16500000; // Use a stable clock frequency
+
+    esp_err_t err = esp_camera_init(&camera_config);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Camera init failed with error 0x%x", err);
         return;
     }
-    
-    // Immediately switch sensor to the smaller live preview settings
-    // sensor_t *s = esp_camera_sensor_get();
-    // s->set_pixformat(s, PIXFORMAT_RGB565);
-    // s->set_framesize(s, FRAMESIZE_240X240);
+
+    ESP_ERROR_CHECK(bsp_sdcard_mount());
 
     // Button setup
     button_handle_t btns[BSP_BUTTON_NUM] = {NULL};
@@ -231,17 +228,11 @@ extern "C" void app_main(void) {
         }
 
         if (is_menu_button_pressed) {
-            click_and_save_pic();
+            click_and_save_pic(panel_handle);
             is_menu_button_pressed = false;
         }
 
-        camera_fb_t *fb = esp_camera_fb_get();
-        if (fb) {
-            esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, fb->width, fb->height, (uint16_t *)fb->buf);
-            esp_camera_fb_return(fb);
-        } else {
-            ESP_LOGW(TAG, "Failed to get frame for preview");
-        }
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 
     ESP_LOGI(TAG, "Exiting preview loop.");
