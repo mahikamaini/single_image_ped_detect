@@ -320,3 +320,11 @@ Continue debugging the live preview.
 N/A 
 ### What I Accomplished
 After running the program again, I got new errors showing "NO-SOI - JPEG start marker missing". After consulting with Gemini, I learned it meant that the camera was stuck in JPEG (image processing) mode and that's why the live preview wasn't showing. From here, I concluded that it may be better to show the last photo taken on the screen rather than a live feed for simplicity purposes. This way, we wouldn't have to switch between JPEG and RGB565 mode and thus eliminates the possibility of the device getting stuck in either mode. 
+
+## Monday, July 28, 2025
+### Task
+Modify code to show last photo taken on LCD screen and test. 
+### Notes
+N/A 
+### What I Accomplished
+I deleted any lines related to switching the camera to RGB565 mode since this is not necessary anymore as we're not doing a live preview anymore. However, I ran into a SPI bus initialization issue because the SD card and LCD screen share the same SPI bus internally. This was fixed by changing the order of component initialization so that the SD card was mounted before the LCD screen. After trying to compile, there was a memory allocation issue, and for this, I needed to set up the camera frame size to be 240 x 240 (the size of the LCD screen). When I managed to run the program, the LCD screen turned on but remained blank even when a picture was taken. While any photos taken were successfully saved to the SD card, an "invalid panel handle" error occurred, which I solved by checking that the panel handle variable was properly initialized. After this, the LCD screen still remained blank, and when all images had the pedestrian-detect model run on them, only one image was processed before the program crashed. I will focus on debugging the image processing errors first, then the LCD screen. 
