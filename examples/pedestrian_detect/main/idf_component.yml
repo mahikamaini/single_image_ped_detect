@@ -4,5 +4,5 @@ dependencies:
   # This is the correct BSP for your project
   espressif/esp32_s3_eye: "^5.0.0"
   espressif/button: "*"
-  # This component helps integrate LVGL, which the BSP uses
-  espressif/esp_lvgl_port: "^2"
+  # # This component helps integrate LVGL, which the BSP uses
+  # espressif/esp_lvgl_port: "^2"
