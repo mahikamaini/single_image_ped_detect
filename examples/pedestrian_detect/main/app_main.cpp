@@ -36,10 +36,6 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-#define ADC_PIN IO1 // The pin that buttons are connected to
-#define MENU_BUTTON_VOLTAGE 2.41f  // Voltage for MENU button
-#define ADC_THRESHOLD 0.05f        // Voltage tolerance range
-
 // #define WIFI_SSID "maini-IoT" 
 // #define WIFI_PWD "18112000"
 // #define SERVER_IP "192.168.15.5"
@@ -60,7 +56,7 @@ const char *TAG = "pedestrian_detect";
 
 // static int s_retry_num = 0;
 
-#define MIN_FREE_SPIRAM 2621440 
+// #define MIN_FREE_SPIRAM 2621440 
 
 // static void event_handler(void* arg, esp_event_base_t event_base,
 //                                 int32_t event_id, void* event_data)
@@ -173,24 +169,6 @@ void click_and_save_pic() {
             ESP_LOGE(TAG, "Could not open file for saving");
         }
 
-    //     uint16_t *rgb565_buff = (uint16_t *) heap_caps_malloc(pic->width * pic->height * sizeof(uint16_t), MALLOC_CAP_SPIRAM);
-    //     if (!rgb565_buff) {
-    //         ESP_LOGE(TAG, "Could not allocate memory for decoded image");
-    //         esp_camera_fb_return(pic); 
-    //         return; 
-    //     } else {
-    //         bool jpeg_converted = jpg2rgb565(pic->buf, pic->len, (uint8_t*)rgb565_buff, JPG_SCALE_NONE);
-    //         if (jpeg_converted) {
-    //           ESP_LOGI(TAG, "Image being drawn to LCD screen...");  
-    //           esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, pic->width, pic->height, rgb565_buff);  
-    //           vTaskDelay(pdMS_TO_TICKS(200)); 
-    //         } else {
-    //             ESP_LOGE(TAG, "Failed to decode JPEG");
-    //         }
-    //         ESP_LOGI(TAG, "Image drawn to LCD screen!");
-    //     }
-    // ESP_LOGI(TAG, "Freeing resources");
-    // heap_caps_free(rgb565_buff);
     esp_camera_fb_return(pic);
 }
 
@@ -198,17 +176,27 @@ void click_and_save_pic() {
 extern "C" void app_main(void) {
     bsp_i2c_init();
     bsp_display_start();
-    bsp_display_backlight_on(); // Set display brightness to 100%
-    ESP_ERROR_CHECK(bsp_sdcard_mount());
+    bsp_display_backlight_on();
+
+    // Button setup
+    button_handle_t btns[BSP_BUTTON_NUM] = {NULL};
+    ESP_ERROR_CHECK(bsp_iot_button_create(btns, NULL, BSP_BUTTON_NUM));
 
     // Initialize the camera
     camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
-    camera_config.pixel_format = PIXFORMAT_RGB565;
+    camera_config.pixel_format = PIXFORMAT_JPEG;      // <-- Key change: Use JPEG from the start
+    camera_config.frame_size = FRAMESIZE_240X240;     // Match LCD resolution
+    camera_config.jpeg_quality = 12;           // Quality for preview and capture
+    camera_config.fb_count = 2;                      // Use 2 frame buffers for smoother capture
+    camera_config.fb_location = CAMERA_FB_IN_PSRAM;
+    camera_config.grab_mode = CAMERA_GRAB_LATEST;
+    camera_config.xclk_freq_hz = 16500000;
     esp_err_t err = esp_camera_init(&camera_config);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Camera Init Failed");
         return;
     }
+
     sensor_t *s = esp_camera_sensor_get();
     s->set_vflip(s, BSP_CAMERA_VFLIP);
     s->set_hmirror(s, BSP_CAMERA_HMIRROR);
@@ -218,6 +206,8 @@ extern "C" void app_main(void) {
     uint8_t *cam_buff = (uint8_t *) heap_caps_malloc(cam_buff_size, MALLOC_CAP_SPIRAM);
     assert(cam_buff);
 
+    ESP_ERROR_CHECK(bsp_sdcard_mount());
+
     // Create LVGL canvas for camera image
     bsp_display_lock(0);
     lv_obj_t *camera_canvas = lv_canvas_create(lv_scr_act());
@@ -226,55 +216,35 @@ extern "C" void app_main(void) {
     lv_obj_center(camera_canvas);
     bsp_display_unlock();
 
-    // Button setup
-    button_handle_t btns[BSP_BUTTON_NUM] = {NULL};
-    bsp_iot_button_create(btns, NULL, BSP_BUTTON_NUM);
     iot_button_register_cb(btns[BSP_BUTTON_MENU], BUTTON_SINGLE_CLICK, NULL, menu_button_cb, NULL);
     iot_button_register_cb(btns[BSP_BUTTON_PLAY], BUTTON_SINGLE_CLICK, NULL, play_button_cb, NULL);
 
+    ESP_LOGI(TAG, "Starting live preview...");
     while (true) {
         if (is_play_button_pressed) {
             break;
         }
-
-        if (is_menu_button_pressed) {
+         if (is_menu_button_pressed) {
             is_menu_button_pressed = false;
-            esp_camera_deinit();
-            camera_config_t jpeg_config = BSP_CAMERA_DEFAULT_CONFIG;
-            jpeg_config.pixel_format = PIXFORMAT_JPEG;
-            jpeg_config.jpeg_quality = 12;
-            if (esp_camera_init(&jpeg_config) == ESP_OK) {
-                // Call your function, which will now get a JPEG frame
-                click_and_save_pic();
-            } else {
-                 ESP_LOGE(TAG, "Failed to re-init camera for JPEG capture!");
-            }
-            esp_camera_deinit();
-            // Re-init camera back to live stream mode
-            if (esp_camera_init(&camera_config) != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to resume live stream! Halting.");
-                break; // Stop if we can't get the camera back
-            }
-            ESP_LOGI(TAG, "Resuming live stream.");
+            click_and_save_pic();
             continue;
         }
-        
-        camera_fb_t *pic;
-        pic = esp_camera_fb_get();
+
+        camera_fb_t *pic = esp_camera_fb_get();
         if (pic) {
-            bsp_display_lock(0);
-            memcpy(cam_buff, pic->buf, cam_buff_size);
-            if (BSP_LCD_BIGENDIAN) {
-                /* Swap bytes in RGB565 */
-                lv_draw_sw_rgb565_swap(cam_buff, cam_buff_size);
+            bool converted = jpg2rgb565(pic->buf, pic->len, cam_buff, JPG_SCALE_NONE);
+            if (converted) {
+                bsp_display_lock(0);
+                lv_obj_invalidate(camera_canvas);
+                bsp_display_unlock();
+            } else {
+                ESP_LOGE(TAG, "JPEG conversion failed!");
             }
-            lv_obj_invalidate(camera_canvas);
-            bsp_display_unlock();
-            esp_camera_fb_return(pic);
+            // Return the buffer only when it's valid and you're done with it.
+            esp_camera_fb_return(pic); 
         } else {
             ESP_LOGE(TAG, "Get frame failed");
         }
-
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
