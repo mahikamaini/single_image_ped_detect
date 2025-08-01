@@ -1,4 +1,5 @@
 dependencies:
   espressif/pedestrian_detect:
     version: "^0.2.3-1"
-  espressif/esp32_s3_eye: "^5.0.0"
+  espressif/esp32_s3_eye: "*"
+  espressif/button: "*"
