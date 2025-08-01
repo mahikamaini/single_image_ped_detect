@@ -1,8 +1,4 @@
 dependencies:
   espressif/pedestrian_detect:
     version: "^0.2.3-1"
-  # This is the correct BSP for your project
   espressif/esp32_s3_eye: "^5.0.0"
-  espressif/button: "*"
-  # # This component helps integrate LVGL, which the BSP uses
-  # espressif/esp_lvgl_port: "^2"
