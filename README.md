@@ -336,3 +336,11 @@ Solve image processing errors, then move on to debugging the LCD screen.
 N/A 
 ### What I Accomplished
 I realized that the resources for each image were not freed after each loop, which was the cause for the program to crash. Thus, the issue was resolved after adding heap_caps_free lines for each image resource. However, the LCD screen was on but remained blank after taking a picture. I tried to increase the delay to allow enough time for the task to finish, but the problem persisted. I temporarily replaced my code with a simple example to turn the display red (generated with Gemini), but the LCD reamined blank. Luckily, I found an example that utilized BSP to stream live camera output to the screen, and that example worked on its own. So, I copied the code from this example and replaced the old camera code with it. After compiling and running, the code worked in my environment, allowing me to move on towards integrating it with my button- and SD card-related code. However, when I tried running my integrated code, I keep getting an error related to the ADC driver - according to Gemini, this likely is coming from an incorrect version or setting. I will continue to try and debug this crash as my next step. 
+
+## Thursday, July 31, 2025
+### Task
+Continue debugging ADC driver errors. 
+### Notes
+N/A 
+### What I Accomplished
+As per Gemini's suggestion, I tried changing a setting in the adc_button file itself, but this only caused compilation errors. I deleted this modification and instead tried changing the version of ESP32-S3-EYE being used in the idf.yml file. However, the error still persisted. At this point, I decided the best course of action was to revert back to the code before I added the live stream example and start again. 
