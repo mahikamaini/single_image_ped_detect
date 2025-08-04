@@ -47,6 +47,7 @@
 // #define EXAMPLE_H2E_IDENTIFIER "H2E"
 static volatile bool is_menu_button_pressed = false;
 static volatile bool is_play_button_pressed = false;
+static int64_t menu_button_start = 0;
 const char *TAG = "pedestrian_detect";
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -141,6 +142,7 @@ const char *TAG = "pedestrian_detect";
 
 static void menu_button_cb(void *arg, void *usr_data)
 {
+    menu_button_start = esp_timer_get_time();
     is_menu_button_pressed = true;
 }
 
@@ -152,10 +154,13 @@ static void play_button_cb(void *arg, void *usr_data)
 void click_and_save_pic() {
     ESP_LOGI(TAG, "Menu button pressed! Taking a picture...");
     camera_fb_t *pic = esp_camera_fb_get();
+    int64_t pic_taken_time = esp_timer_get_time();
     if (!pic) {
         ESP_LOGE(TAG, "Couldn't capture picture");
         return;
     }
+    float duration_ms = (float)(pic_taken_time - menu_button_start) / 1000.0;
+    ESP_LOGI(TAG, "Time from button press to image capture: %.2f ms", duration_ms);
         static int pic_count = 0;
         pic_count++;
         char filename[40];
