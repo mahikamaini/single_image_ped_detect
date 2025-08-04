@@ -35,6 +35,7 @@
 #include "driver/spi_master.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 
 // #define WIFI_SSID "maini-IoT" 
 // #define WIFI_PWD "18112000"
@@ -183,6 +184,7 @@ extern "C" void app_main(void) {
     ESP_ERROR_CHECK(bsp_iot_button_create(btns, NULL, BSP_BUTTON_NUM));
 
     // Initialize the camera
+    int64_t start_time = esp_timer_get_time();
     camera_config_t camera_config = BSP_CAMERA_DEFAULT_CONFIG;
     camera_config.pixel_format = PIXFORMAT_JPEG;      // <-- Key change: Use JPEG from the start
     camera_config.frame_size = FRAMESIZE_240X240;     // Match LCD resolution
@@ -200,7 +202,9 @@ extern "C" void app_main(void) {
     sensor_t *s = esp_camera_sensor_get();
     s->set_vflip(s, BSP_CAMERA_VFLIP);
     s->set_hmirror(s, BSP_CAMERA_HMIRROR);
+    int64_t end_time = esp_timer_get_time();
     ESP_LOGI(TAG, "Camera Init done");
+    ESP_LOGI(TAG, "Camera initialized in %lld microseconds", end_time - start_time);
 
     uint32_t cam_buff_size = BSP_LCD_H_RES * BSP_LCD_V_RES * 2;
     uint8_t *cam_buff = (uint8_t *) heap_caps_malloc(cam_buff_size, MALLOC_CAP_SPIRAM);
