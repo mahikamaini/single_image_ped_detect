@@ -344,3 +344,11 @@ Continue debugging ADC driver errors.
 N/A 
 ### What I Accomplished
 As per Gemini's suggestion, I tried changing a setting in the adc_button file itself, but this only caused compilation errors. I deleted this modification and instead tried changing the version of ESP32-S3-EYE being used in the idf.yml file. However, the error still persisted. At this point, I decided the best course of action was to revert back to the code before I added the live stream example and start again. 
+
+## Friday, August 1, 2025
+### Task
+Continue debugging ADC driver errors and re-integrate live stream example. 
+### Notes
+N/A 
+### What I Accomplished
+After researching more, I decided to try changing the initialization order of the components - putting the buttons before the camera and SD card instead of afterward. This was what finally resolved the ADC driver issue, so I was able to move on to re-integrating the example live stream code. After copying in the example code, I used Gemini to see what kind of logic I would need to integrate this functionality. One of these suggestions was switching the camera between RGB565 and JPEG modes for the live preview and saving photos. However, this constant initialization and reinitialization was causing camera drive failure. This was fixed by simplifying the code to only initialize the camera once in JPEG mode. As for the live preview, I utilized a built-in function to decode the JPEG frames into RGB565. This led to the camera initializing correctly; however, the LCD display was pixelated. After a little research, I learned this was because the color data's byte order was being swapped automatically by the LVGL graphics library as well as manually in the code. Removing the manual byte-swapping resolved this, leading to a working capture-and-save application with a live preview on the LCD screen. 
