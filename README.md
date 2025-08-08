@@ -352,3 +352,11 @@ Continue debugging ADC driver errors and re-integrate live stream example.
 N/A 
 ### What I Accomplished
 After researching more, I decided to try changing the initialization order of the components - putting the buttons before the camera and SD card instead of afterward. This was what finally resolved the ADC driver issue, so I was able to move on to re-integrating the example live stream code. After copying in the example code, I used Gemini to see what kind of logic I would need to integrate this functionality. One of these suggestions was switching the camera between RGB565 and JPEG modes for the live preview and saving photos. However, this constant initialization and reinitialization was causing camera drive failure. This was fixed by simplifying the code to only initialize the camera once in JPEG mode. As for the live preview, I utilized a built-in function to decode the JPEG frames into RGB565. This led to the camera initializing correctly; however, the LCD display was pixelated. After a little research, I learned this was because the color data's byte order was being swapped automatically by the LVGL graphics library as well as manually in the code. Removing the manual byte-swapping resolved this, leading to a working capture-and-save application with a live preview on the LCD screen. 
+
+## Monday, August 4, 2025
+### Task
+Add in time logs for certain processes. 
+### Notes
+N/A 
+### What I Accomplished
+After discussing with Ben, he suggested time logs as an extension to the project - how long it takes the camera to initialize, and how long it takes the camera to take an image after the button has been pressed. I imported the ESP-IDF's time header file into my project and from there, I used the relevant syntax (referencing the API) to print out this information to the terminal at the relevant times. My next step will hopefully be to move on the next extension - adding sleep capabilities to make the device to to sleep after each image capture to save battery life. 
