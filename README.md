@@ -360,3 +360,11 @@ Add in time logs for certain processes.
 N/A 
 ### What I Accomplished
 After discussing with Ben, he suggested time logs as an extension to the project - how long it takes the camera to initialize, and how long it takes the camera to take an image after the button has been pressed. I imported the ESP-IDF's time header file into my project and from there, I used the relevant syntax (referencing the API) to print out this information to the terminal at the relevant times. My next step will hopefully be to move on the next extension - adding sleep capabilities to make the device to to sleep after each image capture to save battery life. 
+
+## Tuesday, August 5, 2025 & Monday, August 11, 2025
+### Task
+Add in sleep functionality for the program. 
+### Notes
+N/A 
+### What I Accomplished
+It was decided that the ESP32 would wake up from sleep when the MENU button was pressed, and go back to sleep after taking a picture. Using the esp_sleep_enable_ext0_wakeup function, I configured the MENU button to be the only source for the device to wake up. Meanwhile, the program checks for the reason the device woke up, and if the MENU button press was the reason for this, the main device initialization occurs. This logic then loops until the MENU button is pressed - in which case, the click_and_save_pic() function is executed and immediately unmounts everything after one image before putting the device to sleep. However, I ran into an issue where the device doesn't sleep for long when the MENU button functionality is completed - it just flicks off and on instead of waiting for the next MENU button press. After some research, I found this was a hardware issue; the pin that is connected to the MENU button is a "floating pin" and not being held in a stable LOW state due to it not being connected to a specific voltage level. This is a hardware issue that is beyond the scope of this project, so this is currently unresolved. However, all other sleep functionality works as intended. ß
